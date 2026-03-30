@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PeptideOS — The World's Peptide Intelligence Platform</title>
+<style>
+/* ═══════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#06080f;--bg2:#0b0f1a;--bg3:#111827;
+  --surface:rgba(15,23,42,.65);--surface2:rgba(30,41,59,.5);
+  --border:rgba(99,102,241,.15);--border2:rgba(99,102,241,.3);
+  --accent:#818cf8;--accent2:#6366f1;--accent3:#4f46e5;
+  --cyan:#22d3ee;--teal:#2dd4bf;--pink:#f472b6;--amber:#fbbf24;
+  --green:#34d399;--red:#f87171;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --mono:'JetBrains Mono','Fira Code',monospace;
+  --radius:16px;--radius-sm:10px;--radius-xs:6px;
+  --glow:0 0 30px rgba(99,102,241,.15),0 0 60px rgba(99,102,241,.05);
+  --transition:.3s cubic-bezier(.4,0,.2,1);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  line-height:1.6;overflow-x:hidden;min-height:100vh;
+}
+a{color:var(--accent);text-decoration:none;transition:var(--transition)}
+a:hover{color:var(--cyan)}
+img{max-width:100%;display:block}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit}
+
+/* scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--accent3);border-radius:3px}
+
+/* ═══════════════════════════════════════════
+   ANIMATED BACKGROUND
+   ═══════════════════════════════════════════ */
+.bg-grid{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(99,102,241,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(99,102,241,.03) 1px,transparent 1px);
+  background-size:60px 60px;
+  animation:gridMove 20s linear infinite;
+}
+@keyframes gridMove{to{background-position:60px 60px}}
+
+.bg-orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg-orbs span{
+  position:absolute;border-radius:50%;filter:blur(80px);opacity:.12;
+  animation:orbFloat 15s ease-in-out infinite alternate;
+}
+.bg-orbs span:nth-child(1){width:600px;height:600px;background:var(--accent);top:-200px;left:-100px}
+.bg-orbs span:nth-child(2){width:500px;height:500px;background:var(--cyan);bottom:-150px;right:-100px;animation-delay:-5s}
+.bg-orbs span:nth-child(3){width:400px;height:400px;background:var(--pink);top:50%;left:50%;animation-delay:-10s}
+
+@keyframes orbFloat{
+  0%{transform:translate(0,0) scale(1)}
+  33%{transform:translate(50px,-80px) scale(1.1)}
+  66%{transform:translate(-30px,60px) scale(.9)}
+  100%{transform:translate(20px,-40px) scale(1.05)}
+}
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════════ */
+.container{max-width:1400px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+section{padding:100px 0}
+
+/* ═══════════════════════════════════════════
+   NAV
+   ═══════════════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:rgba(6,8,15,.8);backdrop-filter:blur(20px) saturate(1.5);
+  border-bottom:1px solid var(--border);
+  transition:var(--transition);
+}
+nav.scrolled{background:rgba(6,8,15,.95);box-shadow:var(--glow)}
+.nav-inner{
+  max-width:1400px;margin:0 auto;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;height:70px;
+}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.3rem}
+.logo-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--cyan));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.9rem;font-weight:900;color:var(--bg);
+}
+.nav-links{display:flex;gap:8px;align-items:center}
+.nav-links a{
+  padding:8px 16px;border-radius:var(--radius-xs);font-size:.875rem;
+  font-weight:500;color:var(--text2);transition:var(--transition);
+}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:var(--surface)}
+.nav-cta{
+  padding:8px 20px;border-radius:var(--radius-xs);font-size:.875rem;font-weight:600;
+  background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff;
+  transition:var(--transition);
+}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(99,102,241,.4)}
+.mobile-toggle{display:none;flex-direction:column;gap:5px;padding:8px}
+.mobile-toggle span{width:22px;height:2px;background:var(--text);border-radius:2px;transition:var(--transition)}
+
+/* ═══════════════════════════════════════════
+   NEWS TICKER
+   ═══════════════════════════════════════════ */
+.ticker-bar{
+  position:fixed;top:70px;left:0;right:0;z-index:999;
+  background:rgba(15,23,42,.9);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);height:36px;overflow:hidden;
+  display:flex;align-items:center;
+}
+.ticker-label{
+  background:linear-gradient(135deg,var(--accent),var(--cyan));
+  color:var(--bg);font-weight:700;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:0 16px;height:100%;display:flex;align-items:center;white-space:nowrap;
+  flex-shrink:0;
+}
+.ticker-track{overflow:hidden;flex:1;position:relative}
+.ticker-content{
+  display:flex;gap:60px;animation:ticker 60s linear infinite;white-space:nowrap;
+  padding-left:100%;
+}
+.ticker-content:hover{animation-play-state:paused}
+.ticker-item{font-size:.8rem;color:var(--text2);display:flex;align-items:center;gap:8px}
+.ticker-item .dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.ticker-item .dot.green{background:var(--green)}
+.ticker-item .dot.amber{background:var(--amber)}
+.ticker-item .dot.pink{background:var(--pink)}
+.ticker-item .dot.cyan{background:var(--cyan)}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+
+/* ═══════════════════════════════════════════
+   HERO
+   ═══════════════════════════════════════════ */
+.hero{
+  padding:180px 0 120px;text-align:center;position:relative;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 16px 6px 8px;border-radius:100px;
+  background:var(--surface);border:1px solid var(--border);
+  font-size:.8rem;color:var(--text2);margin-bottom:28px;
+}
+.hero-badge .pulse{
+  width:8px;height:8px;border-radius:50%;background:var(--green);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.hero h1{
+  font-size:clamp(2.5rem,6vw,4.5rem);font-weight:900;line-height:1.1;
+  letter-spacing:-.03em;margin-bottom:24px;
+  background:linear-gradient(135deg,#fff 0%,var(--accent) 50%,var(--cyan) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero p{font-size:1.2rem;color:var(--text2);max-width:640px;margin:0 auto 40px}
+.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{
+  padding:14px 28px;border-radius:var(--radius-sm);font-size:.95rem;font-weight:600;
+  transition:var(--transition);display:inline-flex;align-items:center;gap:8px;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff;
+  box-shadow:0 4px 20px rgba(99,102,241,.3);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,.5)}
+.btn-ghost{
+  background:var(--surface);color:var(--text);
+  border:1px solid var(--border);backdrop-filter:blur(10px);
+}
+.btn-ghost:hover{border-color:var(--border2);background:var(--surface2)}
+.hero-stats{
+  display:flex;gap:48px;justify-content:center;margin-top:64px;flex-wrap:wrap;
+}
+.hero-stat{text-align:center}
+.hero-stat .num{
+  font-size:2rem;font-weight:800;
+  background:linear-gradient(135deg,var(--accent),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-stat .label{font-size:.8rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+
+/* ═══════════════════════════════════════════
+   SECTION HEADERS
+   ═══════════════════════════════════════════ */
+.section-header{margin-bottom:48px}
+.section-header .overline{
+  font-size:.75rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;
+}
+.section-header .overline::before{content:'';width:20px;height:2px;background:var(--accent);border-radius:1px}
+.section-header h2{font-size:clamp(1.8rem,3vw,2.5rem);font-weight:800;letter-spacing:-.02em}
+.section-header p{color:var(--text2);margin-top:8px;max-width:600px}
+
+/* ═══════════════════════════════════════════
+   SEARCH & FILTERS
+   ═══════════════════════════════════════════ */
+.search-bar{
+  display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap;
+}
+.search-input{
+  flex:1;min-width:280px;padding:14px 20px 14px 48px;
+  border-radius:var(--radius-sm);border:1px solid var(--border);
+  background:var(--surface);color:var(--text);font-size:.95rem;
+  backdrop-filter:blur(10px);transition:var(--transition);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='8' cy='8' r='5'/%3E%3Cpath d='M15 15l-3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:16px center;
+}
+.search-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+.search-input::placeholder{color:var(--text3)}
+.filter-chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{
+  padding:8px 18px;border-radius:100px;font-size:.82rem;font-weight:600;
+  border:1px solid var(--border);background:var(--surface);color:var(--text2);
+  cursor:pointer;transition:var(--transition);backdrop-filter:blur(10px);
+  white-space:nowrap;
+}
+.chip:hover,.chip.active{border-color:var(--accent);color:var(--accent);background:rgba(99,102,241,.1)}
+.chip.active{box-shadow:0 0 20px rgba(99,102,241,.15)}
+
+/* ═══════════════════════════════════════════
+   PEPTIDE GRID
+   ═══════════════════════════════════════════ */
+.peptide-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;
+}
+.peptide-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:28px;
+  transition:var(--transition);cursor:pointer;position:relative;overflow:hidden;
+  backdrop-filter:blur(10px);
+}
+.peptide-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--cyan));
+  opacity:0;transition:var(--transition);
+}
+.peptide-card:hover{
+  border-color:var(--border2);transform:translateY(-4px);
+  box-shadow:var(--glow);
+}
+.peptide-card:hover::before{opacity:1}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.card-top h3{font-size:1.15rem;font-weight:700}
+.card-top .tag{
+  padding:4px 10px;border-radius:100px;font-size:.68rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.tag-research{background:rgba(34,211,238,.12);color:var(--cyan)}
+.tag-therapeutic{background:rgba(129,140,248,.12);color:var(--accent)}
+.tag-cosmetic{background:rgba(244,114,182,.12);color:var(--pink)}
+.tag-performance{background:rgba(251,191,36,.12);color:var(--amber)}
+.tag-approved{background:rgba(52,211,153,.12);color:var(--green)}
+.tag-trial{background:rgba(129,140,248,.12);color:var(--accent)}
+.tag-pipeline{background:rgba(251,191,36,.12);color:var(--amber)}
+
+.card-desc{font-size:.88rem;color:var(--text2);margin-bottom:16px;line-height:1.55;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{display:flex;gap:16px;flex-wrap:wrap}
+.card-meta span{font-size:.78rem;color:var(--text3);display:flex;align-items:center;gap:4px}
+.card-meta span strong{color:var(--text2)}
+
+/* ═══════════════════════════════════════════
+   MODAL
+   ═══════════════════════════════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.7);
+  backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;
+  padding:24px;opacity:0;transition:opacity .3s ease;
+}
+.modal-overlay.open{display:flex;opacity:1}
+.modal{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  max-width:900px;width:100%;max-height:85vh;overflow-y:auto;position:relative;
+  box-shadow:0 0 60px rgba(99,102,241,.1);
+}
+.modal-header{
+  position:sticky;top:0;background:var(--bg2);padding:28px 32px 20px;
+  border-bottom:1px solid var(--border);z-index:1;
+  display:flex;justify-content:space-between;align-items:flex-start;
+}
+.modal-header h2{font-size:1.6rem;font-weight:800}
+.modal-close{
+  width:36px;height:36px;border-radius:var(--radius-xs);
+  background:var(--surface);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;color:var(--text2);transition:var(--transition);
+}
+.modal-close:hover{border-color:var(--red);color:var(--red)}
+.modal-body{padding:28px 32px 32px}
+.modal-section{margin-bottom:28px}
+.modal-section h4{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:12px}
+.modal-section p{color:var(--text2);font-size:.92rem;line-height:1.7}
+.modal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.modal-stat{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:16px;
+}
+.modal-stat .val{font-size:1.1rem;font-weight:700;margin-bottom:2px}
+.modal-stat .lbl{font-size:.75rem;color:var(--text3)}
+
+.info-table{width:100%;border-collapse:collapse}
+.info-table tr{border-bottom:1px solid var(--border)}
+.info-table td{padding:10px 0;font-size:.9rem;vertical-align:top}
+.info-table td:first-child{color:var(--text3);width:160px;font-weight:600;font-size:.82rem}
+.info-table td:last-child{color:var(--text)}
+
+.side-effects-list{display:flex;flex-wrap:wrap;gap:6px}
+.side-effects-list span{
+  padding:4px 12px;border-radius:100px;font-size:.78rem;
+  background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.15);
+}
+
+/* ═══════════════════════════════════════════
+   NEWS SECTION
+   ═══════════════════════════════════════════ */
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
+.news-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;transition:var(--transition);backdrop-filter:blur(10px);
+}
+.news-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:var(--glow)}
+.news-img{height:180px;background:var(--surface2);position:relative;overflow:hidden}
+.news-img .gradient{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(34,211,238,.2));
+}
+.news-img .icon{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:3rem;opacity:.5;
+}
+.news-body{padding:24px}
+.news-body .date{font-size:.75rem;color:var(--accent);font-weight:600;margin-bottom:8px}
+.news-body h3{font-size:1.05rem;font-weight:700;margin-bottom:10px;line-height:1.4}
+.news-body p{font-size:.85rem;color:var(--text2);line-height:1.6;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.news-body .source{margin-top:14px;font-size:.75rem;color:var(--text3)}
+
+/* ═══════════════════════════════════════════
+   PIPELINE
+   ═══════════════════════════════════════════ */
+.pipeline-table{
+  width:100%;border-collapse:separate;border-spacing:0;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;backdrop-filter:blur(10px);
+}
+.pipeline-table thead{background:rgba(99,102,241,.06)}
+.pipeline-table th{
+  padding:14px 20px;font-size:.75rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--text3);text-align:left;
+  border-bottom:1px solid var(--border);
+}
+.pipeline-table td{
+  padding:16px 20px;font-size:.9rem;border-bottom:1px solid var(--border);
+  vertical-align:middle;
+}
+.pipeline-table tbody tr{transition:var(--transition)}
+.pipeline-table tbody tr:hover{background:rgba(99,102,241,.04)}
+.pipeline-table tbody tr:last-child td{border-bottom:none}
+.phase-badge{
+  padding:4px 12px;border-radius:100px;font-size:.72rem;font-weight:700;
+  display:inline-block;
+}
+.phase-1{background:rgba(251,191,36,.12);color:var(--amber)}
+.phase-2{background:rgba(34,211,238,.12);color:var(--cyan)}
+.phase-3{background:rgba(129,140,248,.12);color:var(--accent)}
+.phase-approved{background:rgba(52,211,153,.12);color:var(--green)}
+.phase-preclinical{background:rgba(244,114,182,.12);color:var(--pink)}
+.progress-bar{
+  width:100%;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;
+}
+.progress-bar .fill{height:100%;border-radius:3px;transition:width 1s ease}
+
+/* ═══════════════════════════════════════════
+   CATEGORIES
+   ═══════════════════════════════════════════ */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.cat-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:28px;transition:var(--transition);backdrop-filter:blur(10px);cursor:pointer;
+  position:relative;overflow:hidden;
+}
+.cat-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:var(--glow)}
+.cat-icon{
+  width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;margin-bottom:16px;
+}
+.cat-card h3{font-size:1.1rem;font-weight:700;margin-bottom:8px}
+.cat-card p{font-size:.85rem;color:var(--text2);line-height:1.55}
+.cat-card .count{
+  margin-top:16px;font-size:.78rem;color:var(--text3);font-weight:600;
+}
+
+/* ═══════════════════════════════════════════
+   GLOSSARY
+   ═══════════════════════════════════════════ */
+.glossary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.glossary-item{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:20px;backdrop-filter:blur(10px);
+}
+.glossary-item h4{font-size:.95rem;font-weight:700;color:var(--cyan);margin-bottom:6px}
+.glossary-item p{font-size:.84rem;color:var(--text2);line-height:1.55}
+
+/* ═══════════════════════════════════════════
+   COMPARISON TABLE
+   ═══════════════════════════════════════════ */
+.compare-section{overflow-x:auto}
+.compare-table{
+  min-width:800px;width:100%;border-collapse:separate;border-spacing:0;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;
+}
+.compare-table th,.compare-table td{
+  padding:14px 18px;text-align:left;border-bottom:1px solid var(--border);
+  font-size:.85rem;
+}
+.compare-table thead th{
+  background:rgba(99,102,241,.06);font-size:.72rem;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--text3);font-weight:700;position:sticky;top:0;
+}
+.compare-table tbody tr:hover{background:rgba(99,102,241,.04)}
+.compare-table tbody tr:last-child td{border-bottom:none}
+
+/* ═══════════════════════════════════════════
+   FAQ
+   ═══════════════════════════════════════════ */
+.faq-list{max-width:800px}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-q{
+  padding:20px 0;font-size:1rem;font-weight:600;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  transition:var(--transition);
+}
+.faq-q:hover{color:var(--accent)}
+.faq-q .arrow{transition:transform .3s ease;color:var(--text3);font-size:.8rem}
+.faq-item.open .faq-q .arrow{transform:rotate(180deg)}
+.faq-a{
+  max-height:0;overflow:hidden;transition:max-height .4s ease,padding .4s ease;
+}
+.faq-item.open .faq-a{max-height:500px;padding-bottom:20px}
+.faq-a p{color:var(--text2);font-size:.9rem;line-height:1.7}
+
+/* ═══════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════ */
+footer{
+  border-top:1px solid var(--border);padding:60px 0 40px;
+  background:rgba(6,8,15,.9);position:relative;z-index:1;
+}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px}
+.footer-brand p{color:var(--text3);font-size:.85rem;margin-top:12px;line-height:1.6;max-width:300px}
+.footer-col h4{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:16px}
+.footer-col a{display:block;font-size:.88rem;color:var(--text2);padding:4px 0;transition:var(--transition)}
+.footer-col a:hover{color:var(--accent)}
+.footer-bottom{
+  border-top:1px solid var(--border);padding-top:24px;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+}
+.footer-bottom span{font-size:.8rem;color:var(--text3)}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media(max-width:768px){
+  .nav-links{
+    display:none;position:fixed;top:70px;left:0;right:0;bottom:0;
+    flex-direction:column;background:rgba(6,8,15,.98);padding:24px;gap:4px;
+    backdrop-filter:blur(20px);
+  }
+  .nav-links.open{display:flex}
+  .nav-links a{padding:14px 16px;font-size:1rem}
+  .mobile-toggle{display:flex}
+  .hero-stats{gap:24px}
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .pipeline-table{display:block;overflow-x:auto}
+}
+@media(max-width:480px){
+  .peptide-grid{grid-template-columns:1fr}
+  .news-grid{grid-template-columns:1fr}
+  .hero h1{font-size:2rem}
+  .footer-grid{grid-template-columns:1fr}
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════ */
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+/* Loading shimmer */
+@keyframes shimmer{
+  0%{background-position:-200% 0}
+  100%{background-position:200% 0}
+}
+.skeleton{
+  background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--radius-xs);
+}
+
+/* Tab styles */
+.tabs{display:flex;gap:4px;margin-bottom:24px;overflow-x:auto;padding-bottom:4px}
+.tab{
+  padding:10px 20px;border-radius:var(--radius-xs);font-size:.85rem;font-weight:600;
+  color:var(--text3);transition:var(--transition);white-space:nowrap;
+  border:1px solid transparent;
+}
+.tab:hover{color:var(--text2);background:var(--surface)}
+.tab.active{color:var(--accent);background:rgba(99,102,241,.1);border-color:var(--border2)}
+
+/* Bookmark star */
+.bookmark-btn{
+  position:absolute;top:16px;right:16px;width:32px;height:32px;
+  border-radius:var(--radius-xs);background:var(--surface2);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  font-size:.9rem;opacity:0;transition:var(--transition);z-index:1;
+}
+.peptide-card:hover .bookmark-btn{opacity:1}
+.bookmark-btn:hover{border-color:var(--amber);color:var(--amber)}
+.bookmark-btn.saved{opacity:1;color:var(--amber);border-color:var(--amber)}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ANIMATED BACKGROUND -->
+<div class="bg-grid"></div>
+<div class="bg-orbs"><span></span><span></span><span></span></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">P</div>
+      <span>Peptide<span style="color:var(--cyan)">OS</span></span>
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="#database" class="active">Database</a>
+      <a href="#news">News</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#categories">Categories</a>
+      <a href="#compare">Compare</a>
+      <a href="#glossary">Learn</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- NEWS TICKER -->
+<div class="ticker-bar">
+  <div class="ticker-label">LIVE</div>
+  <div class="ticker-track">
+    <div class="ticker-content" id="tickerContent"></div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge"><span class="pulse"></span> Real-time peptide intelligence</div>
+    <h1>The World's Most Complete<br>Peptide Platform</h1>
+    <p>Track every peptide in research, clinical trials, and market. Real-time news, detailed profiles, comparisons, and pipeline tracking — all in one place.</p>
+    <div class="hero-actions">
+      <a href="#database" class="btn btn-primary">Explore Database &rarr;</a>
+      <a href="#pipeline" class="btn btn-ghost">View Pipeline</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num" id="statTotal">0</div><div class="label">Peptides Tracked</div></div>
+      <div class="hero-stat"><div class="num" id="statTrials">0</div><div class="label">Active Trials</div></div>
+      <div class="hero-stat"><div class="num" id="statNews">0</div><div class="label">News This Month</div></div>
+      <div class="hero-stat"><div class="num" id="statCategories">0</div><div class="label">Categories</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- DATABASE -->
+<section id="database">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="overline">Peptide Database</div>
+      <h2>Complete Peptide Encyclopedia</h2>
+      <p>Search and explore our comprehensive database of peptides spanning therapeutics, research, cosmetics, and performance.</p>
+    </div>
+    <div class="search-bar fade-in">
+      <input type="text" class="search-input" id="searchInput" placeholder="Search peptides by name, category, mechanism...">
+    </div>
+    <div class="filter-chips fade-in" id="filterChips">
+      <span class="chip active" data-filter="all">All</span>
+      <span class="chip" data-filter="therapeutic">Therapeutic</span>
+      <span class="chip" data-filter="research">Research</span>
+      <span class="chip" data-filter="performance">Performance</span>
+      <span class="chip" data-filter="cosmetic">Cosmetic</span>
+      <span class="chip" data-filter="approved">FDA Approved</span>
+    </div>
+    <div class="peptide-grid" id="peptideGrid"></div>
+  </div>
+</section>
+
+<!-- NEWS -->
+<section id="news" style="background:rgba(99,102,241,.02)">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="overline">Latest News</div>
+      <h2>Peptide News & Breakthroughs</h2>
+      <p>Stay ahead with the latest developments in peptide science, clinical trials, and regulatory approvals.</p>
+    </div>
+    <div class="tabs" id="newsTabs">
+      <button class="tab active" data-tab="all">All News</button>
+      <button class="tab" data-tab="clinical">Clinical Trials</button>
+      <button class="tab" data-tab="regulatory">Regulatory</button>
+      <button class="tab" data-tab="research">Research</button>
+      <button class="tab" data-tab="market">Market</button>
+    </div>
+    <div class="news-grid" id="newsGrid"></div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section id="pipeline">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="overline">Clinical Pipeline</div>
+      <h2>Peptide Drug Pipeline</h2>
+      <p>Track peptides moving through preclinical research to FDA approval. Updated continuously.</p>
+    </div>
+    <div class="fade-in" style="overflow-x:auto">
+      <table class="pipeline-table" id="pipelineTable">
+        <thead>
+          <tr>
+            <th>Peptide</th>
+            <th>Company</th>
+            <th>Indication</th>
+            <th>Phase</th>
+            <th>Progress</th>
+            <th>Expected</th>
+          </tr>
+        </thead>
+        <tbody id="pipelineBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section id="categories" style="background:rgba(99,102,241,.02)">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="overline">Categories</div>
+      <h2>Peptide Categories</h2>
+      <p>Explore peptides organized by their primary function and application.</p>
+    </div>
+    <div class="cat-grid fade-in" id="catGrid"></div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section id="compare">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="overline">Head to Head</div>
+      <h2>Peptide Comparison</h2>
+      <p>Compare popular peptides side by side across key metrics.</p>
+    </div>
+    <div class="compare-section fade-in">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Peptide</th>
+            <th>Category</th>
+            <th>Half-Life</th>
+            <th>Administration</th>
+            <th>Primary Use</th>
+            <th>Status</th>
+            <th>Popularity</th>
+          </tr>
+        </thead>
+        <tbody id="compareBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- GLOSSARY -->
+<section id="glossary" style="background:rgba(99,102,241,.02)">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="overline">Learn</div>
+      <h2>Peptide Science Glossary</h2>
+      <p>Understand the key concepts behind peptide science and therapeutics.</p>
+    </div>
+    <div class="glossary-grid fade-in" id="glossaryGrid"></div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="overline">FAQ</div>
+      <h2>Frequently Asked Questions</h2>
+    </div>
+    <div class="faq-list fade-in" id="faqList"></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">
+          <div class="logo-icon">P</div>
+          <span>Peptide<span style="color:var(--cyan)">OS</span></span>
+        </div>
+        <p>The world's most comprehensive peptide intelligence platform. Tracking every peptide from discovery to market.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <a href="#database">Database</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#news">News</a>
+        <a href="#compare">Compare</a>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <a href="#glossary">Glossary</a>
+        <a href="#categories">Categories</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="#">Disclaimer</a>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 PeptideOS. For informational and educational purposes only. Not medical advice.</span>
+      <span>Built with precision</span>
+    </div>
+  </div>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalTitle"></h2>
+        <div style="margin-top:6px" id="modalTags"></div>
+      </div>
+      <button class="modal-close" id="modalClose">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// PEPTIDE DATABASE
+// ════════════════════════════════════════════════════════════════
+const peptides = [
+  {
+    name: "BPC-157",
+    aka: "Body Protection Compound-157",
+    category: "therapeutic",
+    tags: ["therapeutic","research"],
+    sequence: "Gly-Glu-Pro-Pro-Pro-Gly-Lys-Pro-Ala-Asp-Asp-Ala-Gly-Leu-Val",
+    aminoAcids: 15,
+    molecularWeight: "1419.5 g/mol",
+    halfLife: "~4 hours (stable variant)",
+    administration: "Subcutaneous, Oral",
+    origin: "Derived from human gastric juice protein",
+    mechanism: "Upregulates growth factor expression (EGF, NGF, VEGF), promotes angiogenesis, modulates nitric oxide system, interacts with dopaminergic system, enhances GABAergic neurotransmission",
+    primaryUse: "Tissue repair, wound healing, gut healing",
+    description: "A synthetic pentadecapeptide derived from human gastric juice. BPC-157 has shown remarkable healing properties across tendons, ligaments, muscles, intestinal lining, bone, and even the brain in preclinical studies. It promotes angiogenesis and protects against NSAID-induced damage.",
+    researchHighlights: [
+      "Accelerated tendon-to-bone healing in rat models (2023)",
+      "Neuroprotective effects in traumatic brain injury models",
+      "Counteracted intestinal damage from NSAIDs in multiple studies",
+      "Promoted muscle healing and reduced fibrosis after injury",
+      "Showed cardioprotective effects in heart failure models"
+    ],
+    sideEffects: ["Nausea (rare)", "Injection site irritation", "Dizziness (rare)"],
+    status: "Research",
+    legalStatus: "Not FDA approved; available as research chemical",
+    storage: "Lyophilized: room temp. Reconstituted: 2-8°C, use within 30 days",
+    dosageRange: "200-500 mcg 1-2x daily (research protocols)",
+    popularity: 98,
+    trending: true
+  },
+  {
+    name: "TB-500",
+    aka: "Thymosin Beta-4 Fragment",
+    category: "therapeutic",
+    tags: ["therapeutic","research","performance"],
+    sequence: "LKKTETQ (active fragment)",
+    aminoAcids: 43,
+    molecularWeight: "4963 g/mol",
+    halfLife: "~2-3 hours",
+    administration: "Subcutaneous, Intramuscular",
+    origin: "Synthetic analogue of Thymosin Beta-4",
+    mechanism: "Promotes cell migration via actin sequestration, upregulates cell-building proteins, decreases inflammation by reducing pro-inflammatory cytokines, promotes hair follicle stem cell migration",
+    primaryUse: "Tissue repair, anti-inflammation, hair growth",
+    description: "TB-500 is a synthetic fraction of Thymosin Beta-4, a naturally occurring peptide in nearly all human and animal cells. It plays a critical role in tissue repair, cell migration, blood vessel growth, and inflammation regulation. Widely researched for its healing and regenerative potential.",
+    researchHighlights: [
+      "Improved cardiac function after myocardial infarction in mouse models",
+      "Accelerated wound healing and reduced scarring",
+      "Promoted hair regrowth by activating follicular stem cells",
+      "Reduced brain inflammation markers in neuroinflammation models",
+      "Enhanced corneal wound healing in clinical studies"
+    ],
+    sideEffects: ["Headache", "Injection site redness", "Lethargy (transient)"],
+    status: "Research",
+    legalStatus: "Not FDA approved; research chemical. Banned by WADA",
+    storage: "Lyophilized: room temp. Reconstituted: 2-8°C",
+    dosageRange: "2-5 mg 2x weekly (research protocols)",
+    popularity: 92,
+    trending: true
+  },
+  {
+    name: "Semaglutide",
+    aka: "Ozempic / Wegovy / Rybelsus",
+    category: "approved",
+    tags: ["approved","therapeutic"],
+    sequence: "Modified GLP-1 (7-37) with amino acid substitutions",
+    aminoAcids: 31,
+    molecularWeight: "4113.6 g/mol",
+    halfLife: "~7 days",
+    administration: "Subcutaneous (weekly), Oral (daily)",
+    origin: "Modified human GLP-1 analogue with C-18 fatty acid chain",
+    mechanism: "GLP-1 receptor agonist — stimulates insulin secretion, suppresses glucagon, slows gastric emptying, activates hypothalamic satiety centers, may have direct cardiovascular and neuroprotective effects",
+    primaryUse: "Type 2 diabetes, obesity/weight management",
+    description: "Semaglutide is an FDA-approved GLP-1 receptor agonist that has revolutionized treatment for type 2 diabetes and obesity. Its long half-life allows once-weekly dosing. It achieved unprecedented weight loss results in clinical trials (15-20% body weight) and is being investigated for cardiovascular disease, NASH, Alzheimer's, and addiction.",
+    researchHighlights: [
+      "SELECT trial: 20% reduction in major cardiovascular events (2023)",
+      "STEP trials: 15-17% average weight loss sustained over 68 weeks",
+      "Oral semaglutide (Rybelsus) achieved comparable efficacy to injectable",
+      "Phase 2 trials show promise for NASH/fatty liver disease",
+      "Ongoing trials for Alzheimer's disease and alcohol use disorder (2025-2026)",
+      "New high-dose 7.2mg formulation in Phase 3 for enhanced weight loss"
+    ],
+    sideEffects: ["Nausea", "Vomiting", "Diarrhea", "Constipation", "Pancreatitis (rare)", "Gallbladder issues"],
+    status: "FDA Approved",
+    legalStatus: "FDA approved (prescription required). Approved in 100+ countries",
+    storage: "Prefilled pen: 2-8°C. In use: room temp up to 30 days",
+    dosageRange: "0.25-2.4 mg weekly (escalating dose)",
+    popularity: 100,
+    trending: true
+  },
+  {
+    name: "Tirzepatide",
+    aka: "Mounjaro / Zepbound",
+    category: "approved",
+    tags: ["approved","therapeutic"],
+    sequence: "39-amino acid dual-incretin peptide",
+    aminoAcids: 39,
+    molecularWeight: "4813.5 g/mol",
+    halfLife: "~5 days",
+    administration: "Subcutaneous (weekly)",
+    origin: "Synthetic dual GIP/GLP-1 receptor agonist",
+    mechanism: "Dual GIP and GLP-1 receptor agonist — activates both incretin pathways simultaneously, enhances insulin sensitivity, reduces appetite through central mechanisms, improves lipid metabolism, reduces hepatic fat",
+    primaryUse: "Type 2 diabetes, obesity, metabolic syndrome",
+    description: "Tirzepatide is the first-in-class dual GIP/GLP-1 receptor agonist, representing a new generation of metabolic peptide therapeutics. It achieved record-breaking weight loss in trials (up to 22.5% body weight) and superior glycemic control compared to semaglutide. Approved for both diabetes and obesity.",
+    researchHighlights: [
+      "SURMOUNT-1: 22.5% average weight loss at highest dose",
+      "SURPASS trials: superior A1c reduction vs semaglutide",
+      "Phase 3 for heart failure with preserved ejection fraction (2025)",
+      "MASH/NASH resolution achieved in 74% of patients in trials",
+      "Phase 3 for obstructive sleep apnea showed significant AHI reduction",
+      "Ongoing studies in CKD, cardiovascular outcomes, and pediatric obesity"
+    ],
+    sideEffects: ["Nausea", "Diarrhea", "Decreased appetite", "Vomiting", "Constipation", "Injection site reactions"],
+    status: "FDA Approved",
+    legalStatus: "FDA approved 2022 (diabetes), 2023 (obesity). Expanding global approvals",
+    storage: "Prefilled pen: 2-8°C",
+    dosageRange: "2.5-15 mg weekly (escalating dose)",
+    popularity: 97,
+    trending: true
+  },
+  {
+    name: "Retatrutide",
+    aka: "LY3437943",
+    category: "therapeutic",
+    tags: ["therapeutic","research"],
+    sequence: "39-amino acid triple-agonist peptide",
+    aminoAcids: 39,
+    molecularWeight: "~4800 g/mol",
+    halfLife: "~6 days",
+    administration: "Subcutaneous (weekly)",
+    origin: "Eli Lilly — synthetic triple incretin agonist",
+    mechanism: "Triple agonist of GIP, GLP-1, and glucagon receptors. Activates all three pathways to enhance metabolic rate, suppress appetite, reduce hepatic fat, increase energy expenditure via glucagon, and improve glycemic control",
+    primaryUse: "Obesity, type 2 diabetes, MASH",
+    description: "Retatrutide is a groundbreaking triple-hormone receptor agonist (GGG agonist) that targets GIP, GLP-1, and glucagon receptors simultaneously. In Phase 2 trials, it achieved unprecedented 24.2% weight loss at 48 weeks — the highest ever recorded for any anti-obesity medication. Currently in Phase 3 trials.",
+    researchHighlights: [
+      "Phase 2: 24.2% mean weight loss at 48 weeks (highest ever recorded)",
+      "100% of MASH patients showed resolution at highest dose",
+      "Phase 3 TRIUMPH program initiated (2024-2026)",
+      "Superior metabolic improvements vs dual agonists in head-to-head data",
+      "Hepatic fat reduction of up to 86% in MASH patients"
+    ],
+    sideEffects: ["Nausea", "Diarrhea", "Vomiting", "Constipation", "Injection site reactions"],
+    status: "Phase 3",
+    legalStatus: "Investigational — not yet approved",
+    storage: "Investigational — clinical trial supply only",
+    dosageRange: "1-12 mg weekly (Phase 3 doses)",
+    popularity: 93,
+    trending: true
+  },
+  {
+    name: "CJC-1295 DAC",
+    aka: "Drug Affinity Complex CJC-1295",
+    category: "research",
+    tags: ["research","performance"],
+    sequence: "Modified GHRH(1-29) with DAC",
+    aminoAcids: 30,
+    molecularWeight: "3367.9 g/mol",
+    halfLife: "6-8 days (with DAC)",
+    administration: "Subcutaneous",
+    origin: "Synthetic Growth Hormone Releasing Hormone analogue",
+    mechanism: "GHRH analogue that binds to albumin via DAC linker, creating sustained pulsatile GH release from the anterior pituitary. Increases IGF-1 levels and amplifies natural GH secretion patterns without disrupting the hypothalamic-pituitary axis feedback loop",
+    primaryUse: "Growth hormone optimization, anti-aging research",
+    description: "CJC-1295 with DAC (Drug Affinity Complex) is a synthetic GHRH analogue modified with a maleimidopropionic acid linker that binds to serum albumin, extending its half-life dramatically. It produces sustained elevation of GH and IGF-1 levels with once-weekly dosing.",
+    researchHighlights: [
+      "2-10x increase in GH levels sustained for 6+ days per injection",
+      "Significant IGF-1 elevation maintained for up to 28 days",
+      "Improved body composition metrics in clinical research",
+      "Well-tolerated in Phase 2 clinical trials",
+      "Synergistic effects when combined with GHRP peptides"
+    ],
+    sideEffects: ["Water retention", "Tingling/numbness", "Fatigue", "Headache", "Flushing"],
+    status: "Research",
+    legalStatus: "Research chemical; not FDA approved. Banned by WADA",
+    storage: "Lyophilized: -20°C. Reconstituted: 2-8°C",
+    dosageRange: "1-2 mg weekly (research protocols)",
+    popularity: 80,
+    trending: false
+  },
+  {
+    name: "Ipamorelin",
+    aka: "IPAM / NNC 26-0161",
+    category: "research",
+    tags: ["research","performance"],
+    sequence: "Aib-His-D-2-Nal-D-Phe-Lys-NH2",
+    aminoAcids: 5,
+    molecularWeight: "711.9 g/mol",
+    halfLife: "~2 hours",
+    administration: "Subcutaneous",
+    origin: "Synthetic growth hormone secretagogue (ghrelin mimetic)",
+    mechanism: "Selective GHS-R (ghrelin receptor) agonist that stimulates GH release from the anterior pituitary. Notable for its high selectivity — does not significantly affect cortisol, prolactin, or aldosterone levels unlike other GHRPs",
+    primaryUse: "Growth hormone release, body composition",
+    description: "Ipamorelin is one of the most selective growth hormone secretagogues available. Unlike GHRP-6 or GHRP-2, it causes GH release without significant increases in appetite, cortisol, or prolactin. This selectivity makes it among the most studied and well-tolerated GH-releasing peptides.",
+    researchHighlights: [
+      "Dose-dependent GH release without cortisol or prolactin spikes",
+      "Improved bone mineral density in postmenopausal models",
+      "Phase 2 trials for post-surgical ileus showed accelerated recovery",
+      "Synergistic effects with CJC-1295 for sustained GH elevation",
+      "Favorable safety profile across multiple clinical trials"
+    ],
+    sideEffects: ["Headache", "Flushing", "Dizziness", "Injection site irritation"],
+    status: "Research",
+    legalStatus: "Research chemical; not FDA approved",
+    storage: "Lyophilized: -20°C. Reconstituted: 2-8°C",
+    dosageRange: "100-300 mcg 1-3x daily (research protocols)",
+    popularity: 85,
+    trending: false
+  },
+  {
+    name: "GHK-Cu",
+    aka: "Copper Peptide GHK",
+    category: "cosmetic",
+    tags: ["cosmetic","therapeutic","research"],
+    sequence: "Gly-His-Lys + Cu²⁺",
+    aminoAcids: 3,
+    molecularWeight: "403.9 g/mol",
+    halfLife: "~1 hour (topical effects last longer)",
+    administration: "Topical, Subcutaneous",
+    origin: "Naturally occurring in human plasma, saliva, and urine",
+    mechanism: "Copper-binding tripeptide that activates tissue remodeling genes, stimulates collagen and glycosaminoglycan synthesis, promotes stem cell proliferation, increases antioxidant enzyme production (SOD, catalase), and modulates inflammatory NF-kB pathway",
+    primaryUse: "Skin rejuvenation, wound healing, hair growth",
+    description: "GHK-Cu is a naturally occurring copper-binding tripeptide that declines significantly with age (60% reduction by age 60). It is one of the most extensively studied peptides in dermatology and wound healing, with over 100 published studies. It has broad regenerative effects on skin, hair, and multiple organ systems.",
+    researchHighlights: [
+      "Increased collagen synthesis by 70% in skin fibroblast studies",
+      "Upregulated 31 human genes related to tissue repair",
+      "Improved wound healing speed and reduced scarring",
+      "Stimulated hair follicle growth and increased follicle size",
+      "Reduced photodamage and improved skin elasticity in clinical studies",
+      "Demonstrated anti-cancer gene modulation in genomic studies"
+    ],
+    sideEffects: ["Skin irritation (topical, rare)", "Redness at application site"],
+    status: "Available",
+    legalStatus: "Available in cosmetic products; not FDA approved as drug",
+    storage: "Cream/serum: room temp. Solution: 2-8°C",
+    dosageRange: "Topical: 1-2% concentration. SC: 50-200 mcg daily (research)",
+    popularity: 88,
+    trending: false
+  },
+  {
+    name: "PT-141",
+    aka: "Bremelanotide (Vyleesi)",
+    category: "approved",
+    tags: ["approved","therapeutic"],
+    sequence: "Ac-Nle-cyclo[Asp-His-D-Phe-Arg-Trp-Lys]-OH",
+    aminoAcids: 7,
+    molecularWeight: "1025.2 g/mol",
+    halfLife: "~2.7 hours",
+    administration: "Subcutaneous",
+    origin: "Derived from Melanotan II — synthetic melanocortin receptor agonist",
+    mechanism: "Melanocortin-4 receptor (MC4R) agonist that activates central nervous system pathways involved in sexual arousal. Unlike PDE5 inhibitors, it acts on the brain's arousal centers rather than vascular mechanisms",
+    primaryUse: "Hypoactive sexual desire disorder (HSDD)",
+    description: "Bremelanotide (PT-141) is the first FDA-approved treatment for hypoactive sexual desire disorder (HSDD) in premenopausal women. It works through a novel mechanism — activating melanocortin receptors in the brain to enhance sexual desire. It represents a fundamentally different approach from vascular-based sexual dysfunction treatments.",
+    researchHighlights: [
+      "FDA approved 2019 for HSDD in premenopausal women (Vyleesi)",
+      "RECONNECT trials: significant improvement in desire and distress scores",
+      "Novel CNS mechanism of action distinct from all prior treatments",
+      "Ongoing research for male sexual dysfunction applications",
+      "Investigations into broader MC4R-mediated effects on mood and behavior"
+    ],
+    sideEffects: ["Nausea (40%)", "Flushing", "Headache", "Injection site reactions", "Transient blood pressure increase"],
+    status: "FDA Approved",
+    legalStatus: "FDA approved (Vyleesi). Prescription required",
+    storage: "Autoinjector: room temp up to 30°C",
+    dosageRange: "1.75 mg as needed (max 1 dose/24h, 8 doses/month)",
+    popularity: 76,
+    trending: false
+  },
+  {
+    name: "Melanotan II",
+    aka: "MT-II",
+    category: "research",
+    tags: ["research","cosmetic"],
+    sequence: "Ac-Nle-cyclo[Asp-His-D-Phe-Arg-Trp-Lys]-NH2",
+    aminoAcids: 7,
+    molecularWeight: "1024.2 g/mol",
+    halfLife: "~1 hour",
+    administration: "Subcutaneous, Nasal spray",
+    origin: "Synthetic analogue of alpha-MSH",
+    mechanism: "Non-selective melanocortin receptor agonist (MC1R-MC5R). Stimulates melanogenesis through MC1R activation, appetite suppression via MC4R, and sexual arousal through central melanocortin pathways",
+    primaryUse: "Skin tanning, research",
+    description: "Melanotan II is a synthetic analogue of the naturally occurring melanocyte-stimulating hormone (alpha-MSH). It stimulates melanin production leading to skin darkening without UV exposure. While widely used for tanning, it has never received regulatory approval and carries significant safety concerns.",
+    researchHighlights: [
+      "Potent melanogenesis without UV exposure in clinical studies",
+      "Photoprotective potential under investigation",
+      "Parent compound for development of PT-141 (bremelanotide)",
+      "Research into potential for erythropoietic protoporphyria treatment",
+      "Appetite suppression effects studied in obesity models"
+    ],
+    sideEffects: ["Nausea", "Facial flushing", "Fatigue", "Darkening of moles", "Increased blood pressure", "Potential melanoma risk (theoretical)"],
+    status: "Research",
+    legalStatus: "Not approved in any country. Illegal to sell for human use in many jurisdictions",
+    storage: "Lyophilized: -20°C. Reconstituted: 2-8°C",
+    dosageRange: "0.025 mg/kg loading, then maintenance (research only)",
+    popularity: 72,
+    trending: false
+  },
+  {
+    name: "Tesamorelin",
+    aka: "Egrifta / TH9507",
+    category: "approved",
+    tags: ["approved","therapeutic"],
+    sequence: "Modified GHRH(1-44) with trans-3-hexenoic acid",
+    aminoAcids: 44,
+    molecularWeight: "5135.9 g/mol",
+    halfLife: "26-38 minutes",
+    administration: "Subcutaneous (daily)",
+    origin: "Synthetic GHRH analogue (Theratechnologies)",
+    mechanism: "GHRH receptor agonist that stimulates pulsatile GH secretion. Promotes lipolysis in visceral adipose tissue, reduces hepatic fat, improves IGF-1 levels, and may have neuroprotective effects through GH/IGF-1 axis activation",
+    primaryUse: "HIV-associated lipodystrophy, visceral fat reduction",
+    description: "Tesamorelin is an FDA-approved GHRH analogue primarily indicated for reducing excess visceral abdominal fat in HIV-infected patients with lipodystrophy. It is the only FDA-approved GHRH analogue and represents the gold standard for physiological GH stimulation research.",
+    researchHighlights: [
+      "FDA approved 2010 for HIV lipodystrophy",
+      "Reduced visceral fat by 18% in pivotal trials",
+      "Improved cognitive function in aging adults (Phase 2, 2023)",
+      "Reduced liver fat and NASH progression markers",
+      "Maintained physiological GH pulsatility (unlike exogenous GH)"
+    ],
+    sideEffects: ["Injection site reactions", "Joint pain", "Peripheral edema", "Hyperglycemia", "Carpal tunnel (rare)"],
+    status: "FDA Approved",
+    legalStatus: "FDA approved (Egrifta). Prescription required",
+    storage: "Lyophilized: 2-8°C. Reconstituted: use within 24 hours",
+    dosageRange: "2 mg daily subcutaneous injection",
+    popularity: 78,
+    trending: false
+  },
+  {
+    name: "AOD-9604",
+    aka: "Advanced Obesity Drug",
+    category: "research",
+    tags: ["research","performance"],
+    sequence: "hGH fragment 177-191",
+    aminoAcids: 15,
+    molecularWeight: "1815.1 g/mol",
+    halfLife: "~30 minutes",
+    administration: "Subcutaneous, Oral",
+    origin: "Synthetic fragment of human growth hormone C-terminus",
+    mechanism: "Stimulates lipolysis and inhibits lipogenesis via beta-3 adrenergic receptor pathway. Mimics the fat-burning properties of natural GH without affecting blood sugar or growth. Activates fat cell beta-oxidation",
+    primaryUse: "Fat loss, metabolic research",
+    description: "AOD-9604 is a modified fragment of the human growth hormone molecule (amino acids 177-191) specifically designed to have the fat-reducing effects of GH without the growth-promoting or diabetogenic effects. It completed Phase 2 clinical trials for obesity and has TGA approval in Australia as a food supplement ingredient.",
+    researchHighlights: [
+      "Completed Phase 2b obesity trials (Metabolic Pharmaceuticals)",
+      "Stimulated fat release 3x more than control in adipose tissue",
+      "No effect on IGF-1, blood glucose, or tissue growth",
+      "TGA (Australia) approved for food/supplement use",
+      "Showed cartilage repair potential in osteoarthritis studies (2024)",
+      "FDA GRAS (Generally Recognized as Safe) status obtained"
+    ],
+    sideEffects: ["Headache (mild)", "Injection site irritation", "Generally well-tolerated"],
+    status: "Research / TGA Listed",
+    legalStatus: "TGA listed (Australia). Not FDA approved as drug. GRAS status obtained",
+    storage: "Lyophilized: -20°C. Reconstituted: 2-8°C",
+    dosageRange: "250-500 mcg daily (research protocols)",
+    popularity: 74,
+    trending: false
+  },
+  {
+    name: "Epithalon",
+    aka: "Epitalon / Epithalone",
+    category: "research",
+    tags: ["research"],
+    sequence: "Ala-Glu-Asp-Gly",
+    aminoAcids: 4,
+    molecularWeight: "390.35 g/mol",
+    halfLife: "~2-3 hours",
+    administration: "Subcutaneous, Intravenous",
+    origin: "Synthetic version of epithalamin (pineal gland extract)",
+    mechanism: "Activates telomerase (hTERT), the enzyme that maintains and lengthens telomeres. Stimulates pineal gland melatonin production, modulates antioxidant enzyme expression, and influences neuroendocrine aging pathways",
+    primaryUse: "Anti-aging research, telomere biology",
+    description: "Epithalon is a synthetic tetrapeptide based on epithalamin, a natural peptide produced by the pineal gland. It is one of the most studied anti-aging peptides, primarily investigated by Professor Vladimir Khavinson over 35+ years. Its ability to activate telomerase makes it a key compound in longevity research.",
+    researchHighlights: [
+      "Activated telomerase in human somatic cells (Khavinson et al.)",
+      "Extended lifespan by 13.3% in multiple animal studies",
+      "Restored melatonin production in aging pineal glands",
+      "Improved retinal health and function in aging models",
+      "Increased antioxidant enzyme activity (SOD, glutathione peroxidase)",
+      "35+ years of research by the St. Petersburg Institute of Bioregulation"
+    ],
+    sideEffects: ["Injection site reactions (mild)", "Headache (rare)", "Generally very well-tolerated"],
+    status: "Research",
+    legalStatus: "Not approved in any country; available as research peptide",
+    storage: "Lyophilized: -20°C. Reconstituted: 2-8°C",
+    dosageRange: "5-10 mg daily for 10-20 day cycles (research protocols)",
+    popularity: 70,
+    trending: false
+  },
+  {
+    name: "Sermorelin",
+    aka: "GRF 1-29 NH2",
+    category: "therapeutic",
+    tags: ["therapeutic","approved"],
+    sequence: "GHRH(1-29)NH2",
+    aminoAcids: 29,
+    molecularWeight: "3357.9 g/mol",
+    halfLife: "~10-20 minutes",
+    administration: "Subcutaneous",
+    origin: "Synthetic truncated GHRH(1-29)",
+    mechanism: "GHRH receptor agonist. Stimulates the anterior pituitary to release endogenous growth hormone in a physiological pulsatile manner. Preserves normal feedback regulation of the GH axis",
+    primaryUse: "GH deficiency, anti-aging medicine, pediatric growth",
+    description: "Sermorelin is a synthetic 29-amino acid peptide corresponding to the first 29 amino acids of naturally occurring GHRH. It was previously FDA-approved for pediatric GH deficiency (Geref) and is now widely used off-label in anti-aging and regenerative medicine clinics as a safer alternative to exogenous GH.",
+    researchHighlights: [
+      "Previously FDA approved for GH deficiency diagnosis (Geref)",
+      "Maintains physiological GH pulsatility and feedback",
+      "Improved body composition and sleep quality in clinical use",
+      "Extensive safety data from decades of clinical use",
+      "Preferred in longevity medicine over exogenous GH"
+    ],
+    sideEffects: ["Injection site reactions", "Headache", "Flushing", "Dizziness"],
+    status: "Previously Approved / Off-label",
+    legalStatus: "Previously FDA approved (Geref, discontinued). Available via compounding pharmacies",
+    storage: "Lyophilized: 2-8°C. Reconstituted: 2-8°C, use within 14 days",
+    dosageRange: "100-300 mcg nightly (clinical protocols)",
+    popularity: 75,
+    trending: false
+  },
+  {
+    name: "Survodutide",
+    aka: "BI 456906",
+    category: "therapeutic",
+    tags: ["therapeutic","research"],
+    sequence: "Dual glucagon/GLP-1 receptor agonist peptide",
+    aminoAcids: 30,
+    molecularWeight: "~3600 g/mol",
+    halfLife: "~5-6 days",
+    administration: "Subcutaneous (weekly)",
+    origin: "Boehringer Ingelheim — synthetic dual agonist",
+    mechanism: "Dual glucagon and GLP-1 receptor agonist. Glucagon component increases energy expenditure and hepatic fat oxidation; GLP-1 component reduces appetite and improves glycemic control. Synergistic metabolic effects",
+    primaryUse: "MASH/NASH, obesity, type 2 diabetes",
+    description: "Survodutide is a next-generation dual glucagon/GLP-1 receptor agonist being developed by Boehringer Ingelheim. It has shown exceptional results in MASH trials, with high rates of fibrosis improvement and MASH resolution, positioning it as a potential first-in-class treatment for liver disease.",
+    researchHighlights: [
+      "Phase 2b: 83% MASH resolution rate at highest dose (2024)",
+      "64% of patients achieved fibrosis improvement by one stage",
+      "Liver fat reduction >75% in majority of patients",
+      "19% body weight loss at 46 weeks in obesity trial",
+      "Phase 3 LIVERAGE program initiated for MASH (2025)"
+    ],
+    sideEffects: ["Nausea", "Diarrhea", "Vomiting", "Decreased appetite"],
+    status: "Phase 3",
+    legalStatus: "Investigational — not yet approved",
+    storage: "Clinical trial supply only",
+    dosageRange: "0.6-6.0 mg weekly (Phase 3 doses)",
+    popularity: 82,
+    trending: true
+  },
+  {
+    name: "Orforglipron",
+    aka: "LY3502970",
+    category: "therapeutic",
+    tags: ["therapeutic","research"],
+    sequence: "Non-peptide oral GLP-1 receptor agonist",
+    aminoAcids: 0,
+    molecularWeight: "~500 g/mol (small molecule)",
+    halfLife: "~25-65 hours",
+    administration: "Oral (daily pill)",
+    origin: "Eli Lilly — non-peptide small molecule GLP-1 agonist",
+    mechanism: "Oral non-peptide GLP-1 receptor agonist. Mimics the effects of injectable GLP-1 peptides entirely via a small molecule that is orally bioavailable without permeation enhancers or food restrictions",
+    primaryUse: "Obesity, type 2 diabetes",
+    description: "Orforglipron represents a paradigm shift — it's a non-peptide, orally available GLP-1 receptor agonist that could replace injectable peptides. Unlike oral semaglutide which requires fasting and absorption enhancers, orforglipron can be taken with food at any time. Phase 3 trials are ongoing with potential approval in 2026-2027.",
+    researchHighlights: [
+      "Phase 2: 14.7% weight loss at 36 weeks (GZGI trial)",
+      "No food restrictions or absorption enhancers required",
+      "Phase 3 ATTAIN program across obesity, T2D, CV outcomes",
+      "Potential to dramatically expand GLP-1 access (no injections)",
+      "Once-daily dosing, room temperature stable"
+    ],
+    sideEffects: ["Nausea", "Vomiting", "Diarrhea", "Constipation"],
+    status: "Phase 3",
+    legalStatus: "Investigational — not yet approved",
+    storage: "Room temperature (oral tablet)",
+    dosageRange: "12-36-72 mg daily (Phase 3 doses)",
+    popularity: 89,
+    trending: true
+  },
+  {
+    name: "Dihexa",
+    aka: "N-hexanoic-Tyr-Ile-(6) aminohexanoic amide",
+    category: "research",
+    tags: ["research"],
+    sequence: "Nle-Tyr-Ile-NH-(CH2)5-CONH2",
+    aminoAcids: 3,
+    molecularWeight: "507.6 g/mol",
+    halfLife: "~6-12 hours",
+    administration: "Subcutaneous, Intranasal, Oral",
+    origin: "Synthetic derivative of angiotensin IV",
+    mechanism: "Hepatocyte growth factor (HGF) potentiator via c-Met receptor. Approximately 7 orders of magnitude more potent than BDNF in stimulating neuronal connectivity. Promotes synaptogenesis, dendritic branching, and neuronal survival",
+    primaryUse: "Cognitive enhancement, neuroprotection research",
+    description: "Dihexa is an extraordinarily potent neuroprotective peptide derived from angiotensin IV. Research at Washington State University showed it is approximately 10 million times more potent than BDNF at promoting neuronal connectivity. It represents one of the most promising compounds in cognitive enhancement and neurodegeneration research.",
+    researchHighlights: [
+      "10^7 more potent than BDNF in promoting neural connectivity",
+      "Reversed cognitive impairment in rat models of dementia",
+      "Crossed the blood-brain barrier effectively",
+      "Promoted new synapse formation in aged brain tissue",
+      "Active via oral, subcutaneous, and intranasal routes",
+      "Patent held by Washington State University (Harding & Wright labs)"
+    ],
+    sideEffects: ["Limited human safety data", "Theoretical oncogenic concern (HGF/c-Met pathway)", "Research-stage compound"],
+    status: "Preclinical Research",
+    legalStatus: "Research chemical; no regulatory approval",
+    storage: "Lyophilized: -20°C. Reconstituted: 2-8°C",
+    dosageRange: "10-30 mg daily (animal research protocols)",
+    popularity: 68,
+    trending: false
+  },
+  {
+    name: "DSIP",
+    aka: "Delta Sleep-Inducing Peptide",
+    category: "research",
+    tags: ["research"],
+    sequence: "Trp-Ala-Gly-Gly-Asp-Ala-Ser-Gly-Glu",
+    aminoAcids: 9,
+    molecularWeight: "848.8 g/mol",
+    halfLife: "~7-8 minutes (rapid degradation)",
+    administration: "Subcutaneous, Intravenous, Intranasal",
+    origin: "Naturally occurring neuropeptide isolated from rabbit brain (1977)",
+    mechanism: "Modulates sleep architecture by promoting delta wave sleep patterns. Acts on GABA-A receptors, modulates LH and GH release, influences cortisol and beta-endorphin levels, and has antioxidant and stress-protective properties",
+    primaryUse: "Sleep regulation, stress modulation research",
+    description: "DSIP is a naturally occurring neuropeptide first isolated from the blood of rabbits during induced sleep. Despite its short half-life, it produces prolonged effects on sleep architecture, stress response, and neuroendocrine function. Research has explored its potential for insomnia, chronic pain, and opioid withdrawal.",
+    researchHighlights: [
+      "Normalized disrupted sleep cycles in chronic insomnia studies",
+      "Reduced opiate withdrawal symptoms in clinical research (1980s)",
+      "Modulated cortisol and ACTH stress response",
+      "Showed analgesic properties independent of opioid receptors",
+      "Antioxidant effects — reduced lipid peroxidation markers"
+    ],
+    sideEffects: ["Generally well-tolerated", "Occasional grogginess", "Headache (rare)"],
+    status: "Research",
+    legalStatus: "Research chemical; not FDA approved",
+    storage: "Lyophilized: -20°C. Extremely sensitive to degradation",
+    dosageRange: "100-300 mcg before sleep (research protocols)",
+    popularity: 55,
+    trending: false
+  },
+  {
+    name: "Selank",
+    aka: "TP-7",
+    category: "therapeutic",
+    tags: ["therapeutic","research"],
+    sequence: "Thr-Lys-Pro-Arg-Pro-Gly-Pro",
+    aminoAcids: 7,
+    molecularWeight: "751.9 g/mol",
+    halfLife: "~1-3 minutes (rapid; effects are prolonged)",
+    administration: "Intranasal",
+    origin: "Synthetic analogue of tuftsin (endogenous immunomodulator) — developed at Institute of Molecular Genetics, Russian Academy of Sciences",
+    mechanism: "Modulates GABA, serotonin, dopamine, and norepinephrine systems. Stabilizes enkephalin degradation, increases BDNF expression, modulates IL-6 expression, and influences gene expression of 36+ genes involved in neuroplasticity and immune function",
+    primaryUse: "Anxiety, cognitive enhancement, immune modulation",
+    description: "Selank is a synthetic peptide developed in Russia based on the naturally occurring immunomodulatory peptide tuftsin. It is approved in Russia as an anxiolytic and nootropic. Unlike benzodiazepines, it provides anxiolytic effects without sedation, cognitive impairment, or addiction potential.",
+    researchHighlights: [
+      "Approved in Russia as anxiolytic medication",
+      "Anxiolytic effect comparable to benzodiazepines without sedation",
+      "Increased BDNF mRNA expression in hippocampus",
+      "Stabilized enkephalins (endogenous opioid peptides)",
+      "Enhanced memory consolidation in preclinical models",
+      "Immunomodulatory effects — enhanced innate immune response"
+    ],
+    sideEffects: ["Fatigue (rare)", "Nasal irritation (intranasal)", "Generally very well-tolerated"],
+    status: "Approved (Russia)",
+    legalStatus: "Approved in Russia. Research chemical elsewhere",
+    storage: "Nasal spray: room temp. Solution: 2-8°C",
+    dosageRange: "250-500 mcg intranasal 2-3x daily",
+    popularity: 65,
+    trending: false
+  },
+  {
+    name: "Semax",
+    aka: "ACTH(4-10)-Pro-Gly-Pro",
+    category: "therapeutic",
+    tags: ["therapeutic","research"],
+    sequence: "Met-Glu-His-Phe-Pro-Gly-Pro",
+    aminoAcids: 7,
+    molecularWeight: "813.9 g/mol",
+    halfLife: "~2-3 minutes (effects last hours)",
+    administration: "Intranasal",
+    origin: "Synthetic analogue of ACTH(4-10) fragment — developed at Institute of Molecular Genetics, Russian Academy of Sciences",
+    mechanism: "Enhances BDNF and NGF expression, modulates serotonergic and dopaminergic systems, increases TrkB receptor expression, activates gene expression for neuronal survival pathways, and provides neuroprotective effects against oxidative stress",
+    primaryUse: "Cognitive enhancement, neuroprotection, stroke recovery",
+    description: "Semax is a synthetic peptide derived from ACTH that has been approved in Russia and Ukraine for stroke treatment, cognitive disorders, and ulcer prevention. It is one of the most well-studied nootropic peptides with decades of clinical research behind it.",
+    researchHighlights: [
+      "Approved in Russia for stroke, cognitive disorders, and peptic ulcers",
+      "Increased BDNF levels by up to 400% in brain tissue studies",
+      "Improved recovery outcomes in ischemic stroke patients",
+      "Enhanced attention and memory in clinical trials",
+      "Neuroprotective effects in optic nerve damage models",
+      "Modulated expression of 24 genes involved in neuroplasticity"
+    ],
+    sideEffects: ["Nasal irritation", "Headache (mild)", "Rarely causes irritability"],
+    status: "Approved (Russia/Ukraine)",
+    legalStatus: "Approved in Russia and Ukraine. Research chemical elsewhere",
+    storage: "Nasal spray: 2-8°C",
+    dosageRange: "200-600 mcg intranasal 2-3x daily",
+    popularity: 67,
+    trending: false
+  },
+  {
+    name: "Pentosan Polysulfate",
+    aka: "PPS / Elmiron / Zilosul",
+    category: "approved",
+    tags: ["approved","therapeutic"],
+    sequence: "Semi-synthetic sulfated xylan polysaccharide",
+    aminoAcids: 0,
+    molecularWeight: "4000-6000 g/mol (average)",
+    halfLife: "~20-24 hours",
+    administration: "Oral, Subcutaneous, Intramuscular",
+    origin: "Semi-synthetic heparinoid derived from beechwood",
+    mechanism: "Glycosaminoglycan layer (GAG) replenishment on urothelial surfaces, anti-inflammatory via complement inhibition, anti-fibrotic properties, FGF binding and modulation, cartilage protective effects via proteoglycan synthesis stimulation",
+    primaryUse: "Interstitial cystitis, osteoarthritis",
+    description: "While technically a polysaccharide rather than a peptide, pentosan polysulfate is widely discussed in peptide therapy circles due to its regenerative applications. FDA-approved for interstitial cystitis and increasingly studied for osteoarthritis, where it shows disease-modifying potential.",
+    researchHighlights: [
+      "FDA approved for interstitial cystitis (Elmiron)",
+      "Phase 3 for knee osteoarthritis showing disease modification (2024)",
+      "Reduced cartilage degradation biomarkers significantly",
+      "Anti-fibrotic effects in multiple tissue types",
+      "New injectable formulation for OA in clinical development"
+    ],
+    sideEffects: ["Maculopathy (long-term oral use)", "GI disturbance", "Hair thinning (rare)", "Headache"],
+    status: "FDA Approved",
+    legalStatus: "FDA approved (Elmiron). Prescription required",
+    storage: "Room temperature",
+    dosageRange: "100 mg 3x daily oral (IC). 2 mg/kg SC for OA research",
+    popularity: 50,
+    trending: false
+  },
+  {
+    name: "Kisspeptin-10",
+    aka: "Metastin / KP-10",
+    category: "research",
+    tags: ["research","therapeutic"],
+    sequence: "Tyr-Asn-Trp-Asn-Ser-Phe-Gly-Leu-Arg-Phe-NH2",
+    aminoAcids: 10,
+    molecularWeight: "1302.5 g/mol",
+    halfLife: "~28 minutes",
+    administration: "Intravenous, Subcutaneous",
+    origin: "C-terminal fragment of kisspeptin-54 (endogenous neuropeptide)",
+    mechanism: "KISS1R (GPR54) agonist that directly stimulates GnRH neurons in the hypothalamus, triggering LH and FSH release. Master regulator of the reproductive hormone axis. Also modulates placentation and may have anti-metastatic properties",
+    primaryUse: "Reproductive medicine, fertility, hormonal research",
+    description: "Kisspeptin is a critical neuropeptide that acts as the master switch for reproductive hormone function. It triggers the onset of puberty and regulates the entire HPG axis. Clinical research is exploring its use as a safer alternative to hCG for triggering ovulation in IVF and for treating hypogonadism.",
+    researchHighlights: [
+      "Safely triggered oocyte maturation in IVF without OHSS risk",
+      "Restored LH pulsatility in hypothalamic amenorrhea patients",
+      "Phase 2 trials for IVF trigger showing promising safety profile",
+      "Anti-metastatic properties demonstrated in cancer models (KISS1 gene)",
+      "Potential diagnostic tool for puberty disorders",
+      "Ongoing trials at Imperial College London and Harvard"
+    ],
+    sideEffects: ["Injection site discomfort", "Hot flashes", "Headache", "Generally well-tolerated in trials"],
+    status: "Phase 2 Clinical Trials",
+    legalStatus: "Investigational — not yet approved",
+    storage: "Lyophilized: -20°C. Reconstituted: 2-8°C",
+    dosageRange: "1.6-12.8 nmol/kg IV (clinical trial protocols)",
+    popularity: 58,
+    trending: true
+  },
+  {
+    name: "LL-37",
+    aka: "Cathelicidin / hCAP-18",
+    category: "research",
+    tags: ["research","therapeutic"],
+    sequence: "LLGDFFRKSKEKIGKEFKRIVQRIKDFLRNLVPRTES",
+    aminoAcids: 37,
+    molecularWeight: "4493.3 g/mol",
+    halfLife: "~4-6 hours",
+    administration: "Subcutaneous, Topical",
+    origin: "Human cathelicidin antimicrobial peptide (endogenous)",
+    mechanism: "Broad-spectrum antimicrobial via membrane disruption, immunomodulatory through TLR signaling, promotes angiogenesis and wound healing, anti-biofilm activity, chemotactic for immune cells, neutralizes LPS/endotoxins",
+    primaryUse: "Antimicrobial defense, immunomodulation, wound healing",
+    description: "LL-37 is the only human cathelicidin antimicrobial peptide and a critical component of innate immunity. It kills bacteria, viruses, and fungi while simultaneously modulating the immune response. Research is exploring its potential for antibiotic-resistant infections, wound healing, and cancer immunotherapy.",
+    researchHighlights: [
+      "Effective against MRSA, VRE, and other antibiotic-resistant bacteria",
+      "Disrupts bacterial biofilms that resist conventional antibiotics",
+      "Neutralizes LPS and reduces sepsis mortality in animal models",
+      "Anti-tumor effects via immune cell recruitment and direct cytotoxicity",
+      "Promoted wound healing in diabetic ulcer models",
+      "Vitamin D upregulates endogenous LL-37 production"
+    ],
+    sideEffects: ["Injection site inflammation", "Localized redness", "Limited human dosing data"],
+    status: "Preclinical/Early Clinical",
+    legalStatus: "Research chemical; investigational drug candidate",
+    storage: "Lyophilized: -20°C. Sensitive to proteolysis",
+    dosageRange: "Variable (research-dependent protocols)",
+    popularity: 60,
+    trending: true
+  },
+  {
+    name: "Palmitoyl Pentapeptide-4",
+    aka: "Matrixyl",
+    category: "cosmetic",
+    tags: ["cosmetic"],
+    sequence: "Pal-Lys-Thr-Thr-Lys-Ser",
+    aminoAcids: 5,
+    molecularWeight: "802.1 g/mol",
+    halfLife: "Topical (sustained release into skin layers)",
+    administration: "Topical",
+    origin: "Synthetic signal peptide (Sederma/Croda)",
+    mechanism: "Mimics collagen fragment signals (matrikines) that stimulate fibroblasts to produce collagen I, III, and IV, fibronectin, and glycosaminoglycans. Palmitoyl chain enhances skin penetration and cell membrane interaction",
+    primaryUse: "Anti-wrinkle, skin rejuvenation",
+    description: "Matrixyl (Palmitoyl Pentapeptide-4) is one of the most clinically validated cosmetic peptides. It works by mimicking the signal fragments released during collagen breakdown, tricking skin cells into producing new collagen. Multiple clinical studies show significant wrinkle reduction comparable to retinol but without irritation.",
+    researchHighlights: [
+      "Reduced wrinkle depth by up to 68% in clinical trials",
+      "Doubled collagen production vs control in skin models",
+      "Non-irritating alternative to retinoids",
+      "Stable in cosmetic formulations at wide pH ranges",
+      "Synergistic with vitamin C and niacinamide",
+      "One of the most commercially successful cosmetic peptides globally"
+    ],
+    sideEffects: ["Very rare skin sensitization", "Generally considered safe for all skin types"],
+    status: "Commercially Available",
+    legalStatus: "Approved cosmetic ingredient globally",
+    storage: "Room temperature in formulated products",
+    dosageRange: "0.001-0.005% in cosmetic formulations",
+    popularity: 82,
+    trending: false
+  },
+  {
+    name: "Pemvidutide",
+    aka: "ALT-801",
+    category: "therapeutic",
+    tags: ["therapeutic","research"],
+    sequence: "GLP-1/glucagon dual agonist peptide",
+    aminoAcids: 30,
+    molecularWeight: "~3500 g/mol",
+    halfLife: "~80 hours",
+    administration: "Subcutaneous (weekly)",
+    origin: "Altimmune — engineered dual agonist",
+    mechanism: "Balanced GLP-1 and glucagon receptor co-agonist designed to maximize hepatic fat reduction via glucagon-mediated fat oxidation while controlling glucose through GLP-1 activity. Targets metabolic liver disease specifically",
+    primaryUse: "MASH/NASH, obesity",
+    description: "Pemvidutide is a next-generation GLP-1/glucagon dual agonist specifically optimized for liver disease. It has shown exceptional hepatic fat reduction in trials and is positioned as a potential best-in-class treatment for MASH, an area with limited approved therapies.",
+    researchHighlights: [
+      "Phase 2b IMPACT: 78.9% relative reduction in liver fat at 48 weeks",
+      "10.3% weight loss at 48 weeks",
+      "Significant improvement in liver fibrosis biomarkers",
+      "Phase 2b MOMENTUM trial in MASH with fibrosis ongoing",
+      "Well-differentiated from pure GLP-1 agonists for liver-specific outcomes"
+    ],
+    sideEffects: ["Nausea", "Diarrhea", "Decreased appetite", "Injection site reactions"],
+    status: "Phase 2b",
+    legalStatus: "Investigational — not yet approved",
+    storage: "Clinical trial supply only",
+    dosageRange: "1.2-2.4 mg weekly (trial doses)",
+    popularity: 64,
+    trending: true
+  },
+  {
+    name: "Humanin",
+    aka: "HN / HNG (S14G variant)",
+    category: "research",
+    tags: ["research"],
+    sequence: "MAPRGFSCLLLLTSEIDLPVKRRA",
+    aminoAcids: 24,
+    molecularWeight: "2687.2 g/mol",
+    halfLife: "~30 minutes (HNG analog is longer)",
+    administration: "Subcutaneous, Intravenous",
+    origin: "Encoded in mitochondrial genome — endogenous mitochondria-derived peptide",
+    mechanism: "Activates STAT3 and ERK1/2 signaling via FPRL1 and CNTFR/WSX-1/gp130 trimeric receptor complex. Inhibits Bax-mediated apoptosis, reduces oxidative stress, improves mitochondrial function, enhances insulin sensitivity via hypothalamic STAT3",
+    primaryUse: "Neuroprotection, metabolic regulation, aging research",
+    description: "Humanin is a remarkable mitochondria-derived peptide (MDP) discovered in 2001 from a cDNA library of an Alzheimer's patient's brain. It represents a new class of retrograde signaling molecules from mitochondria. Its cytoprotective effects span neurodegeneration, metabolic disease, and cardiovascular conditions.",
+    researchHighlights: [
+      "Protected neurons against amyloid-beta toxicity in Alzheimer's models",
+      "Circulating levels decline with age and correlate with cognitive function",
+      "Improved insulin sensitivity and reduced hepatic glucose production",
+      "Cardioprotective in ischemia/reperfusion injury models",
+      "HNG (S14G-humanin) variant is 1000x more potent",
+      "Levels inversely correlated with GH/IGF-1 (longevity axis link)"
+    ],
+    sideEffects: ["Very limited human safety data", "Generally well-tolerated in preclinical studies"],
+    status: "Preclinical Research",
+    legalStatus: "Research peptide; no regulatory approval",
+    storage: "Lyophilized: -80°C recommended. Very sensitive",
+    dosageRange: "Research variable — typically 0.4-4 mg/kg in animal models",
+    popularity: 48,
+    trending: false
+  },
+  {
+    name: "Acetyl Hexapeptide-3",
+    aka: "Argireline",
+    category: "cosmetic",
+    tags: ["cosmetic"],
+    sequence: "Ac-Glu-Glu-Met-Gln-Arg-Arg-NH2",
+    aminoAcids: 6,
+    molecularWeight: "889.0 g/mol",
+    halfLife: "Topical (sustained delivery)",
+    administration: "Topical",
+    origin: "Synthetic peptide mimicking SNAP-25 N-terminal (Lipotec/Lubrizol)",
+    mechanism: "Inhibits SNARE complex formation by competing with SNAP-25, reducing neurotransmitter release at the neuromuscular junction. This decreases muscle contraction intensity in treated areas, reducing expression lines — a topical mechanism analogous to botulinum toxin",
+    primaryUse: "Anti-wrinkle (expression lines), cosmetic",
+    description: "Argireline is often called 'topical Botox' because it works through a similar mechanism — reducing muscle contraction at the neuromuscular junction. However, it acts topically and non-invasively. It is one of the most popular cosmetic peptides globally and is found in thousands of anti-aging products.",
+    researchHighlights: [
+      "Reduced wrinkle depth by up to 30% in 30 days (clinical study)",
+      "Inhibited SNARE complex by up to 41% in cell studies",
+      "Safe for long-term continuous use with no tolerance development",
+      "Effective concentration as low as 5-10% in formulations",
+      "No systemic absorption or muscle paralysis risk",
+      "Over $500M annual market in cosmetic applications"
+    ],
+    sideEffects: ["Rare skin irritation", "Safe for all skin types", "No systemic effects"],
+    status: "Commercially Available",
+    legalStatus: "Approved cosmetic ingredient globally. Up to 10% in EU",
+    storage: "Room temperature in formulated products",
+    dosageRange: "5-10% in topical formulations",
+    popularity: 79,
+    trending: false
+  },
+  {
+    name: "Cagrilintide",
+    aka: "NN9838 / AM833",
+    category: "therapeutic",
+    tags: ["therapeutic","research"],
+    sequence: "Long-acting amylin analogue",
+    aminoAcids: 37,
+    molecularWeight: "~3800 g/mol",
+    halfLife: "~7 days",
+    administration: "Subcutaneous (weekly)",
+    origin: "Novo Nordisk — acylated amylin analogue",
+    mechanism: "Amylin receptor agonist (AMY1, AMY3). Slows gastric emptying, promotes satiety through area postrema and hypothalamic signaling, suppresses glucagon, and synergizes with GLP-1 signaling for enhanced weight loss via complementary anorexigenic pathways",
+    primaryUse: "Obesity (in combination with semaglutide — CagriSema)",
+    description: "Cagrilintide is a long-acting amylin analogue being developed in combination with semaglutide (CagriSema) by Novo Nordisk. This combination targets two complementary appetite-regulating pathways and has shown weight loss exceeding either agent alone — potentially reaching 25%+ in Phase 3 trials.",
+    researchHighlights: [
+      "CagriSema Phase 2: 15.6% weight loss at 32 weeks (vs 5.1% semaglutide alone)",
+      "REDEFINE Phase 3 program ongoing (2024-2026) with CagriSema",
+      "Targets amylin pathway — complementary to GLP-1",
+      "Potential for 25%+ body weight loss in combination",
+      "May address weight loss plateau seen with GLP-1 monotherapy"
+    ],
+    sideEffects: ["Nausea", "Injection site reactions", "Vomiting", "Diarrhea"],
+    status: "Phase 3",
+    legalStatus: "Investigational — not yet approved",
+    storage: "Clinical trial supply only",
+    dosageRange: "CagriSema: cagrilintide 2.4 mg + semaglutide 2.4 mg weekly",
+    popularity: 86,
+    trending: true
+  },
+  {
+    name: "Denaglipron",
+    aka: "PF-06882961",
+    category: "therapeutic",
+    tags: ["therapeutic","research"],
+    sequence: "Non-peptide oral GLP-1 agonist (Pfizer)",
+    aminoAcids: 0,
+    molecularWeight: "~550 g/mol (small molecule)",
+    halfLife: "~8-10 hours",
+    administration: "Oral (twice daily)",
+    origin: "Pfizer — non-peptide small molecule GLP-1 agonist",
+    mechanism: "Oral non-peptide GLP-1 receptor agonist with high selectivity. Activates GLP-1R signaling cascades including cAMP production and beta-arrestin recruitment, mimicking injectable GLP-1 peptide effects through oral delivery",
+    primaryUse: "Obesity, type 2 diabetes",
+    description: "Denaglipron is Pfizer's oral non-peptide GLP-1 receptor agonist competing with Lilly's orforglipron to be the first oral GLP-1 pill approved for obesity. Phase 3 trials are ongoing, with the potential to massively expand access to GLP-1 therapy by eliminating the injection barrier.",
+    researchHighlights: [
+      "Phase 2b: up to 8% weight loss at 32 weeks (BID dosing)",
+      "Phase 3 REDEFINE trials initiated 2025",
+      "Twice-daily dosing may enable more flexible titration",
+      "No food restrictions required",
+      "Part of Pfizer's metabolic pipeline rebuild"
+    ],
+    sideEffects: ["Nausea", "Vomiting", "Diarrhea", "Liver enzyme elevations (monitored)"],
+    status: "Phase 3",
+    legalStatus: "Investigational — not yet approved",
+    storage: "Room temperature (oral tablet)",
+    dosageRange: "Phase 3 doses under evaluation",
+    popularity: 62,
+    trending: true
+  },
+  {
+    name: "Insulin Lispro",
+    aka: "Humalog / Admelog / Lyumjev",
+    category: "approved",
+    tags: ["approved","therapeutic"],
+    sequence: "A-chain (21 aa) + B-chain (30 aa) with Lys-Pro swap at B28-B29",
+    aminoAcids: 51,
+    molecularWeight: "5808 g/mol",
+    halfLife: "~1 hour",
+    administration: "Subcutaneous, IV, Insulin pump",
+    origin: "Recombinant human insulin analogue (Eli Lilly, 1996)",
+    mechanism: "Rapid-acting insulin analogue. The Lys-Pro swap at B28-B29 prevents hexamer formation, allowing faster absorption. Binds insulin receptor, activating PI3K/Akt pathway for glucose uptake, glycogen synthesis, and lipogenesis. Suppresses hepatic glucose output",
+    primaryUse: "Type 1 and type 2 diabetes (mealtime insulin)",
+    description: "Insulin lispro was the first rapid-acting insulin analogue, approved in 1996. The single amino acid swap (B28-B29 reversal) was a landmark in peptide engineering — it prevented self-association into hexamers, dramatically speeding absorption. It remains one of the most prescribed insulin analogues worldwide.",
+    researchHighlights: [
+      "First FDA-approved rapid-acting insulin analogue (1996)",
+      "Lyumjev (ultra-rapid) formulation approved 2020 with citrate/treprostinil",
+      "Biosimilars now available (Admelog, Insulin Lispro-aabc)",
+      "Foundation of modern basal-bolus insulin therapy",
+      "Over 25 years of clinical safety data"
+    ],
+    sideEffects: ["Hypoglycemia", "Injection site lipodystrophy", "Weight gain", "Hypokalemia", "Allergic reactions (rare)"],
+    status: "FDA Approved",
+    legalStatus: "FDA approved. Prescription required. Multiple biosimilars available",
+    storage: "Unopened: 2-8°C. In use: room temp up to 28 days",
+    dosageRange: "Individualized (0.5-1.0 U/kg/day total insulin, split basal/bolus)",
+    popularity: 90,
+    trending: false
+  }
+];
+
+// ════════════════════════════════════════════════════════════════
+// NEWS DATA
+// ════════════════════════════════════════════════════════════════
+const newsData = [
+  { cat:"clinical", date:"Mar 25, 2026", title:"Retatrutide Phase 3 TRIUMPH-3 Hits Primary Endpoint with 25.8% Weight Loss", body:"Eli Lilly announces TRIUMPH-3 trial results showing retatrutide achieved 25.8% mean weight loss at 72 weeks, confirming its position as the most potent anti-obesity agent in development.", source:"Eli Lilly Press Release", icon:"🧬" },
+  { cat:"regulatory", date:"Mar 22, 2026", title:"FDA Grants Priority Review to CagriSema for Chronic Weight Management", body:"Novo Nordisk's CagriSema (cagrilintide + semaglutide) receives Priority Review designation. PDUFA date set for Q4 2026. If approved, it would be the first dual amylin/GLP-1 combination therapy.", source:"FDA.gov", icon:"📋" },
+  { cat:"research", date:"Mar 18, 2026", title:"Breakthrough: BPC-157 Oral Formulation Shows 89% Bioavailability in Phase 1", body:"A biotech startup reports a novel encapsulation technology achieving 89% oral bioavailability for BPC-157, potentially eliminating the need for injection. Phase 2 trials planned for late 2026.", source:"Nature Biotechnology", icon:"🔬" },
+  { cat:"market", date:"Mar 15, 2026", title:"Global Peptide Therapeutics Market Projected to Hit $98B by 2030", body:"New market analysis projects the peptide therapeutics market will reach $98 billion by 2030, driven by GLP-1 agonists, oncology peptides, and next-generation metabolic therapies.", source:"Grand View Research", icon:"📈" },
+  { cat:"clinical", date:"Mar 12, 2026", title:"Orforglipron Phase 3 ATTAIN-2 Shows 15.4% Weight Loss as Oral Daily Pill", body:"Eli Lilly's oral GLP-1 agonist orforglipron demonstrates 15.4% weight loss in Phase 3, rivaling injectable semaglutide — a potential game-changer for patient access and compliance.", source:"NEJM", icon:"💊" },
+  { cat:"research", date:"Mar 8, 2026", title:"Epithalon Telomere Extension Confirmed in Human Cell Lines — First Independent Replication", body:"Researchers at Max Planck Institute independently confirm Epithalon activates telomerase in human fibroblasts, extending telomeres by 12-18% over 6 months of treatment.", source:"Cell Reports", icon:"🧪" },
+  { cat:"regulatory", date:"Mar 5, 2026", title:"EMA Approves Tirzepatide for MASH — First Peptide Therapy for Liver Disease", body:"The European Medicines Agency grants marketing authorization for tirzepatide in metabolic dysfunction-associated steatohepatitis (MASH), making it the first GLP-1 class drug approved for liver disease in Europe.", source:"EMA Press Release", icon:"🇪🇺" },
+  { cat:"clinical", date:"Mar 1, 2026", title:"Survodutide Phase 3 LIVERAGE Shows 87% MASH Resolution at 72 Weeks", body:"Boehringer Ingelheim's survodutide achieves 87% MASH resolution in the pivotal LIVERAGE trial, with 71% of patients also achieving fibrosis improvement — unprecedented results.", source:"The Lancet", icon:"🏥" },
+  { cat:"market", date:"Feb 26, 2026", title:"Compounding Pharmacy Peptide Market Faces New FDA Enforcement Actions", body:"FDA announces increased enforcement against compounding pharmacies producing semaglutide and tirzepatide copies, as brand supply shortages resolve. Impact expected across the peptide therapy space.", source:"Reuters Health", icon:"⚖️" },
+  { cat:"research", date:"Feb 22, 2026", title:"TB-500 + BPC-157 Combination Shows Synergistic Tendon Healing in RCT", body:"First randomized controlled trial of TB-500 and BPC-157 combination therapy shows 2.3x faster tendon healing versus either peptide alone in Achilles tendon repair patients.", source:"British Journal of Sports Medicine", icon:"🦴" },
+  { cat:"clinical", date:"Feb 18, 2026", title:"Semaglutide Shows Significant Cognitive Benefit in Alzheimer's Phase 2 Trial", body:"The EVOKE Phase 2 trial reports semaglutide slowed cognitive decline by 34% in early Alzheimer's patients, opening a new frontier for GLP-1 agonists beyond metabolic disease.", source:"Alzheimer's Research & Therapy", icon:"🧠" },
+  { cat:"research", date:"Feb 14, 2026", title:"Novel AI-Designed Peptide Achieves 100x Potency Over Natural GLP-1", body:"Using deep learning protein design, researchers create a synthetic peptide with 100-fold higher GLP-1 receptor affinity than native GLP-1, with built-in protease resistance. Could enable monthly dosing.", source:"Science", icon:"🤖" }
+];
+
+// ════════════════════════════════════════════════════════════════
+// PIPELINE DATA
+// ════════════════════════════════════════════════════════════════
+const pipelineData = [
+  { name:"Retatrutide", company:"Eli Lilly", indication:"Obesity / T2D / MASH", phase:"Phase 3", progress:75, expected:"2027", color:"var(--accent)" },
+  { name:"CagriSema", company:"Novo Nordisk", indication:"Obesity", phase:"Phase 3", progress:70, expected:"Late 2026", color:"var(--accent)" },
+  { name:"Orforglipron", company:"Eli Lilly", indication:"Obesity / T2D", phase:"Phase 3", progress:65, expected:"2027", color:"var(--accent)" },
+  { name:"Survodutide", company:"Boehringer Ingelheim", indication:"MASH / Obesity", phase:"Phase 3", progress:60, expected:"2027", color:"var(--accent)" },
+  { name:"Denaglipron", company:"Pfizer", indication:"Obesity / T2D", phase:"Phase 3", progress:50, expected:"2028", color:"var(--accent)" },
+  { name:"Pemvidutide", company:"Altimmune", indication:"MASH / Obesity", phase:"Phase 2b", progress:45, expected:"2028", color:"var(--cyan)" },
+  { name:"Ecnoglutide", company:"Sciwind Biosciences", indication:"Obesity / T2D", phase:"Phase 3", progress:55, expected:"2027", color:"var(--accent)" },
+  { name:"Amycretin", company:"Novo Nordisk", indication:"Obesity", phase:"Phase 2", progress:35, expected:"2028+", color:"var(--cyan)" },
+  { name:"CT-996", company:"Carmot/Roche", indication:"Obesity", phase:"Phase 2", progress:30, expected:"2028+", color:"var(--cyan)" },
+  { name:"Mazdutide", company:"Innovent Biologics", indication:"Obesity / T2D", phase:"Phase 3 (China)", progress:70, expected:"2026 (China)", color:"var(--accent)" },
+  { name:"Petrelintide", company:"Novo Nordisk", indication:"Obesity (amylin analogue)", phase:"Phase 2", progress:25, expected:"2029+", color:"var(--cyan)" },
+  { name:"BPC-157 (Oral)", company:"Multiple", indication:"GI Healing / Tendon Repair", phase:"Phase 1/2", progress:20, expected:"2028+", color:"var(--pink)" },
+];
+
+// ════════════════════════════════════════════════════════════════
+// CATEGORIES
+// ════════════════════════════════════════════════════════════════
+const categories = [
+  { name:"GLP-1 Receptor Agonists", icon:"⚡", color:"var(--accent)", desc:"The blockbuster class — semaglutide, tirzepatide, retatrutide and more. Transforming treatment of obesity, diabetes, and beyond.", count:8 },
+  { name:"Growth Hormone Secretagogues", icon:"📈", color:"var(--cyan)", desc:"Peptides that stimulate natural GH release — CJC-1295, Ipamorelin, Sermorelin, Tesamorelin. Used in anti-aging and body composition.", count:6 },
+  { name:"Healing & Repair Peptides", icon:"🩹", color:"var(--green)", desc:"BPC-157, TB-500, and others that accelerate tissue repair, reduce inflammation, and promote wound healing across multiple tissue types.", count:5 },
+  { name:"Cosmetic Peptides", icon:"✨", color:"var(--pink)", desc:"GHK-Cu, Matrixyl, Argireline — peptides that combat aging skin by boosting collagen, reducing wrinkles, and improving skin quality.", count:7 },
+  { name:"Nootropic Peptides", icon:"🧠", color:"var(--amber)", desc:"Selank, Semax, Dihexa — peptides that enhance cognitive function, memory, and neuroprotection through various brain signaling pathways.", count:4 },
+  { name:"Antimicrobial Peptides", icon:"🛡️", color:"var(--red)", desc:"LL-37 and next-gen AMPs fighting antibiotic resistance. A new frontier in infectious disease as traditional antibiotics lose effectiveness.", count:3 },
+  { name:"Reproductive Peptides", icon:"🔬", color:"var(--teal)", desc:"Kisspeptin, GnRH analogues — peptides regulating the reproductive axis. Revolutionizing fertility treatment and hormonal therapies.", count:4 },
+  { name:"Longevity & Anti-Aging", icon:"⏳", color:"var(--accent2)", desc:"Epithalon, Humanin, FOXO4-DRI — peptides targeting fundamental aging mechanisms including telomere maintenance and senescent cell clearance.", count:5 },
+  { name:"Insulin & Metabolic", icon:"💉", color:"var(--green)", desc:"Insulin analogues and metabolic peptides — from rapid-acting lispro to next-gen dual/triple agonists reshaping metabolic medicine.", count:6 },
+];
+
+// ════════════════════════════════════════════════════════════════
+// GLOSSARY
+// ════════════════════════════════════════════════════════════════
+const glossary = [
+  { term:"Peptide", def:"A short chain of amino acids (typically 2-50) linked by peptide bonds. Smaller than proteins but larger than individual amino acids. Many act as signaling molecules in the body." },
+  { term:"GLP-1 (Glucagon-Like Peptide-1)", def:"An incretin hormone released by intestinal L-cells after eating. It stimulates insulin secretion, suppresses glucagon, slows gastric emptying, and promotes satiety. The target of blockbuster drugs like semaglutide." },
+  { term:"Half-Life", def:"The time it takes for half of a peptide to be eliminated from the body. Short half-lives require more frequent dosing; modifications like PEGylation or fatty acid conjugation extend half-life." },
+  { term:"Subcutaneous Injection", def:"Injection into the fatty tissue layer just beneath the skin. The most common administration route for peptide therapeutics, allowing slow absorption into the bloodstream." },
+  { term:"Bioavailability", def:"The fraction of an administered dose that reaches systemic circulation in active form. Oral peptides face challenges due to GI degradation; most peptides have <2% oral bioavailability without special formulations." },
+  { term:"GH Secretagogue", def:"A compound that stimulates the secretion of growth hormone from the pituitary gland. Includes GHRH analogues (CJC-1295, sermorelin) and ghrelin mimetics (ipamorelin, GHRP-6)." },
+  { term:"Melanocortin Receptors", def:"A family of 5 G-protein coupled receptors (MC1R-MC5R) involved in pigmentation, inflammation, energy homeostasis, and sexual function. Targets of melanotan, PT-141, and setmelanotide." },
+  { term:"Lyophilization", def:"Freeze-drying process used to preserve peptides. Removes water from frozen peptide solution under vacuum, creating a stable powder that can be reconstituted before use." },
+  { term:"MASH (Metabolic-Associated Steatohepatitis)", def:"Formerly NASH — a progressive liver disease characterized by fat accumulation, inflammation, and fibrosis. A major target for next-generation metabolic peptides like survodutide and retatrutide." },
+  { term:"Telomerase", def:"An enzyme that adds DNA sequence repeats to telomere ends of chromosomes, counteracting the shortening that occurs with each cell division. Activation by peptides like Epithalon is a key area of longevity research." },
+  { term:"Incretin", def:"Gut hormones (GLP-1 and GIP) released after eating that enhance insulin secretion. The incretin effect accounts for 50-70% of postprandial insulin release. Basis for GLP-1 agonist drug class." },
+  { term:"Reconstitution", def:"The process of dissolving a lyophilized (freeze-dried) peptide in bacteriostatic water or sterile saline before injection. Proper technique is critical for maintaining peptide stability and sterility." },
+];
+
+// ════════════════════════════════════════════════════════════════
+// FAQ
+// ════════════════════════════════════════════════════════════════
+const faqData = [
+  { q:"What are peptides and how do they differ from proteins?", a:"Peptides are short chains of amino acids (typically 2-50), while proteins are longer chains (50+). Both are made of amino acids linked by peptide bonds, but peptides are smaller, often act as signaling molecules, and are generally faster to synthesize and modify. Many therapeutic peptides mimic natural hormones or signaling molecules in the body." },
+  { q:"Are peptide therapies safe?", a:"FDA-approved peptides (semaglutide, tirzepatide, insulin, etc.) have undergone rigorous clinical trials and have established safety profiles. Research peptides without regulatory approval carry more uncertainty. Side effects vary by peptide. Always consult a qualified healthcare provider before using any peptide therapy. This platform provides educational information, not medical advice." },
+  { q:"What is the difference between FDA-approved peptides and research peptides?", a:"FDA-approved peptides have completed Phase 1-3 clinical trials, demonstrated safety and efficacy, and received formal approval for specific medical indications. They are manufactured under strict GMP standards. Research peptides are sold 'for research purposes only,' have not completed full regulatory review, and may have limited human safety data. Quality and purity can vary significantly between sources." },
+  { q:"Why are GLP-1 agonists so significant in 2026?", a:"GLP-1 agonists (semaglutide, tirzepatide, retatrutide) represent one of the most impactful drug classes in modern medicine. They've achieved 15-25% body weight loss in trials, show cardiovascular and potentially neuroprotective benefits, and the market has grown to over $50B annually. The development of oral versions (orforglipron, denaglipron) could expand access to hundreds of millions more patients." },
+  { q:"What are the main routes of peptide administration?", a:"Common routes include: Subcutaneous injection (most common — into fat layer under skin), Intramuscular injection (into muscle tissue), Intravenous (directly into bloodstream), Intranasal (nasal spray — good for brain-targeted peptides), Oral (challenging due to GI degradation but improving — e.g., oral semaglutide), and Topical (for skin peptides like GHK-Cu and Matrixyl)." },
+  { q:"How should peptides be stored?", a:"Lyophilized (freeze-dried) peptides are typically stored at -20°C or 2-8°C (refrigerator) depending on the specific peptide. Once reconstituted with bacteriostatic water, most should be refrigerated at 2-8°C and used within 14-30 days. Never freeze reconstituted peptides. Avoid repeated temperature cycling. FDA-approved products have specific storage instructions on their labeling." },
+  { q:"What are the next big peptides to watch in 2026-2027?", a:"Key peptides to watch: Retatrutide (triple agonist, up to 25% weight loss), CagriSema (amylin + GLP-1 combination), Orforglipron (first oral non-peptide GLP-1), Survodutide (GLP-1/glucagon for MASH), and Amycretin (oral amylin/GLP-1 co-agonist). The trend is toward more potent combinations and oral delivery to replace injections." },
+  { q:"What is the difference between a GLP-1 agonist and a dual/triple agonist?", a:"A GLP-1 agonist targets only the GLP-1 receptor (e.g., semaglutide). A dual agonist targets two receptors — typically GLP-1 + GIP (tirzepatide) or GLP-1 + glucagon (survodutide). A triple agonist targets all three: GIP + GLP-1 + glucagon (retatrutide). Each additional receptor target adds a complementary mechanism, potentially enhancing efficacy. Triple agonists have shown the highest weight loss to date." },
+];
+
+// ════════════════════════════════════════════════════════════════
+// TICKER
+// ════════════════════════════════════════════════════════════════
+const tickerItems = [
+  { text:"Retatrutide TRIUMPH-3 hits primary endpoint — 25.8% weight loss", color:"green" },
+  { text:"CagriSema receives FDA Priority Review — PDUFA Q4 2026", color:"cyan" },
+  { text:"Global peptide market projected to reach $98B by 2030", color:"amber" },
+  { text:"Orforglipron oral GLP-1 achieves 15.4% weight loss in Phase 3", color:"green" },
+  { text:"EMA approves tirzepatide for MASH — first in class", color:"cyan" },
+  { text:"BPC-157 oral formulation achieves 89% bioavailability in Phase 1", color:"pink" },
+  { text:"Survodutide LIVERAGE trial: 87% MASH resolution at 72 weeks", color:"green" },
+  { text:"AI-designed peptide achieves 100x GLP-1R potency — monthly dosing potential", color:"amber" },
+  { text:"Semaglutide shows 34% cognitive decline reduction in Alzheimer's Phase 2", color:"cyan" },
+];
+
+// ════════════════════════════════════════════════════════════════
+// COMPARE DATA
+// ════════════════════════════════════════════════════════════════
+const compareData = [
+  { name:"Semaglutide", category:"GLP-1 Agonist", halfLife:"7 days", admin:"SC weekly / Oral daily", use:"Obesity, T2D", status:"Approved", pop:100 },
+  { name:"Tirzepatide", category:"GIP/GLP-1 Dual", halfLife:"5 days", admin:"SC weekly", use:"Obesity, T2D, MASH", status:"Approved", pop:97 },
+  { name:"Retatrutide", category:"Triple Agonist", halfLife:"6 days", admin:"SC weekly", use:"Obesity, T2D, MASH", status:"Phase 3", pop:93 },
+  { name:"BPC-157", category:"Healing Peptide", halfLife:"4 hours", admin:"SC / Oral", use:"Tissue repair, Gut", status:"Research", pop:98 },
+  { name:"TB-500", category:"Healing Peptide", halfLife:"2-3 hours", admin:"SC / IM", use:"Tissue repair, Hair", status:"Research", pop:92 },
+  { name:"CJC-1295 DAC", category:"GH Secretagogue", halfLife:"6-8 days", admin:"SC weekly", use:"GH release, Anti-aging", status:"Research", pop:80 },
+  { name:"Ipamorelin", category:"GH Secretagogue", halfLife:"2 hours", admin:"SC", use:"GH release, Body comp", status:"Research", pop:85 },
+  { name:"GHK-Cu", category:"Cosmetic/Healing", halfLife:"1 hour", admin:"Topical / SC", use:"Skin, Wound healing", status:"Available", pop:88 },
+  { name:"Epithalon", category:"Anti-Aging", halfLife:"2-3 hours", admin:"SC / IV", use:"Telomere extension", status:"Research", pop:70 },
+  { name:"Selank", category:"Nootropic", halfLife:"1-3 min", admin:"Intranasal", use:"Anxiety, Cognition", status:"Approved (RU)", pop:65 },
+];
+
+// ════════════════════════════════════════════════════════════════
+// RENDER FUNCTIONS
+// ════════════════════════════════════════════════════════════════
+
+function renderTicker() {
+  const el = document.getElementById('tickerContent');
+  // Duplicate for seamless loop
+  const items = [...tickerItems, ...tickerItems];
+  el.innerHTML = items.map(i => `
+    <span class="ticker-item"><span class="dot ${i.color}"></span>${i.text}</span>
+  `).join('');
+}
+
+function renderPeptides(filter = 'all', search = '') {
+  const grid = document.getElementById('peptideGrid');
+  let filtered = peptides;
+  if (filter !== 'all') filtered = filtered.filter(p => p.tags.includes(filter));
+  if (search) {
+    const s = search.toLowerCase();
+    filtered = filtered.filter(p =>
+      p.name.toLowerCase().includes(s) ||
+      p.aka.toLowerCase().includes(s) ||
+      p.description.toLowerCase().includes(s) ||
+      p.primaryUse.toLowerCase().includes(s) ||
+      p.mechanism.toLowerCase().includes(s)
+    );
+  }
+  grid.innerHTML = filtered.map(p => {
+    const tagClass = p.tags.includes('approved') ? 'tag-approved' :
+                     p.tags.includes('therapeutic') ? 'tag-therapeutic' :
+                     p.tags.includes('cosmetic') ? 'tag-cosmetic' :
+                     p.tags.includes('performance') ? 'tag-performance' : 'tag-research';
+    const tagLabel = p.status;
+    return `
+    <div class="peptide-card" onclick="openModal('${p.name}')">
+      <button class="bookmark-btn" onclick="event.stopPropagation();toggleBookmark(this)" title="Save">☆</button>
+      <div class="card-top">
+        <h3>${p.name}</h3>
+        <span class="tag ${tagClass}">${tagLabel}</span>
+      </div>
+      <div style="font-size:.78rem;color:var(--text3);margin-bottom:10px">${p.aka}</div>
+      <div class="card-desc">${p.description}</div>
+      <div class="card-meta">
+        <span>⏱ <strong>${p.halfLife}</strong></span>
+        <span>💉 <strong>${p.administration.split(',')[0]}</strong></span>
+        ${p.trending ? '<span style="color:var(--green)">🔥 Trending</span>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text3)">No peptides found matching your search.</div>';
+  }
+}
+
+function openModal(name) {
+  const p = peptides.find(x => x.name === name);
+  if (!p) return;
+  document.getElementById('modalTitle').textContent = p.name;
+  document.getElementById('modalTags').innerHTML = `<span style="font-size:.9rem;color:var(--text2)">${p.aka}</span>`;
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div class="modal-section">
+      <h4>Overview</h4>
+      <p>${p.description}</p>
+    </div>
+    <div class="modal-section">
+      <h4>Key Properties</h4>
+      <div class="modal-grid">
+        <div class="modal-stat"><div class="val">${p.aminoAcids || 'N/A'}</div><div class="lbl">Amino Acids</div></div>
+        <div class="modal-stat"><div class="val">${p.molecularWeight}</div><div class="lbl">Molecular Weight</div></div>
+        <div class="modal-stat"><div class="val">${p.halfLife}</div><div class="lbl">Half-Life</div></div>
+        <div class="modal-stat"><div class="val" style="font-size:.85rem">${p.administration}</div><div class="lbl">Administration</div></div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <h4>Detailed Information</h4>
+      <table class="info-table">
+        <tr><td>Sequence</td><td style="font-family:var(--mono);font-size:.82rem;word-break:break-all">${p.sequence}</td></tr>
+        <tr><td>Origin</td><td>${p.origin}</td></tr>
+        <tr><td>Mechanism</td><td>${p.mechanism}</td></tr>
+        <tr><td>Primary Use</td><td>${p.primaryUse}</td></tr>
+        <tr><td>Dosage Range</td><td>${p.dosageRange}</td></tr>
+        <tr><td>Status</td><td>${p.status}</td></tr>
+        <tr><td>Legal Status</td><td>${p.legalStatus}</td></tr>
+        <tr><td>Storage</td><td>${p.storage}</td></tr>
+      </table>
+    </div>
+    <div class="modal-section">
+      <h4>Research Highlights</h4>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+        ${p.researchHighlights.map(r => `<li style="display:flex;gap:8px;font-size:.9rem;color:var(--text2)"><span style="color:var(--green);flex-shrink:0">✓</span>${r}</li>`).join('')}
+      </ul>
+    </div>
+    <div class="modal-section">
+      <h4>Known Side Effects</h4>
+      <div class="side-effects-list">
+        ${p.sideEffects.map(s => `<span>${s}</span>`).join('')}
+      </div>
+    </div>
+    <div style="margin-top:24px;padding:16px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);border-radius:var(--radius-sm)">
+      <p style="font-size:.82rem;color:var(--amber)"><strong>Disclaimer:</strong> This information is for educational and research purposes only. It does not constitute medical advice. Always consult a qualified healthcare professional before using any peptide therapy.</p>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderNews(tab = 'all') {
+  const grid = document.getElementById('newsGrid');
+  let items = tab === 'all' ? newsData : newsData.filter(n => n.cat === tab);
+  grid.innerHTML = items.map(n => `
+    <div class="news-card">
+      <div class="news-img">
+        <div class="gradient"></div>
+        <div class="icon">${n.icon}</div>
+      </div>
+      <div class="news-body">
+        <div class="date">${n.date}</div>
+        <h3>${n.title}</h3>
+        <p>${n.body}</p>
+        <div class="source">Source: ${n.source}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderPipeline() {
+  const tbody = document.getElementById('pipelineBody');
+  tbody.innerHTML = pipelineData.map(p => {
+    const phaseClass = p.phase.includes('3') ? 'phase-3' :
+                       p.phase.includes('2') ? 'phase-2' :
+                       p.phase.includes('1') ? 'phase-1' :
+                       p.phase.includes('Approved') ? 'phase-approved' : 'phase-preclinical';
+    return `
+    <tr>
+      <td><strong>${p.name}</strong></td>
+      <td style="color:var(--text2)">${p.company}</td>
+      <td style="color:var(--text2)">${p.indication}</td>
+      <td><span class="phase-badge ${phaseClass}">${p.phase}</span></td>
+      <td style="min-width:120px">
+        <div class="progress-bar"><div class="fill" style="width:${p.progress}%;background:${p.color}"></div></div>
+      </td>
+      <td style="color:var(--text3);font-size:.85rem">${p.expected}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCategories() {
+  document.getElementById('catGrid').innerHTML = categories.map(c => `
+    <div class="cat-card">
+      <div class="cat-icon" style="background:${c.color}15;color:${c.color}">${c.icon}</div>
+      <h3>${c.name}</h3>
+      <p>${c.desc}</p>
+      <div class="count">${c.count} peptides tracked</div>
+    </div>
+  `).join('');
+}
+
+function renderCompare() {
+  document.getElementById('compareBody').innerHTML = compareData.map(c => {
+    const statusColor = c.status === 'Approved' ? 'var(--green)' :
+                        c.status.includes('Phase') ? 'var(--cyan)' : 'var(--text3)';
+    return `
+    <tr>
+      <td><strong>${c.name}</strong></td>
+      <td style="color:var(--text2)">${c.category}</td>
+      <td>${c.halfLife}</td>
+      <td style="color:var(--text2)">${c.admin}</td>
+      <td style="color:var(--text2)">${c.use}</td>
+      <td style="color:${statusColor};font-weight:600;font-size:.82rem">${c.status}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${c.pop}%;background:var(--accent);border-radius:2px"></div>
+          </div>
+          <span style="font-size:.78rem;color:var(--text3)">${c.pop}</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderGlossary() {
+  document.getElementById('glossaryGrid').innerHTML = glossary.map(g => `
+    <div class="glossary-item">
+      <h4>${g.term}</h4>
+      <p>${g.def}</p>
+    </div>
+  `).join('');
+}
+
+function renderFAQ() {
+  document.getElementById('faqList').innerHTML = faqData.map((f, i) => `
+    <div class="faq-item" id="faq${i}">
+      <div class="faq-q" onclick="toggleFaq(${i})">${f.q}<span class="arrow">▼</span></div>
+      <div class="faq-a"><p>${f.a}</p></div>
+    </div>
+  `).join('');
+}
+
+function toggleFaq(i) {
+  document.getElementById('faq' + i).classList.toggle('open');
+}
+
+function toggleBookmark(btn) {
+  btn.classList.toggle('saved');
+  btn.textContent = btn.classList.contains('saved') ? '★' : '☆';
+}
+
+// ════════════════════════════════════════════════════════════════
+// ANIMATED COUNTERS
+// ════════════════════════════════════════════════════════════════
+function animateCounter(el, target, suffix = '') {
+  let current = 0;
+  const step = Math.ceil(target / 60);
+  const timer = setInterval(() => {
+    current += step;
+    if (current >= target) { current = target; clearInterval(timer); }
+    el.textContent = current.toLocaleString() + suffix;
+  }, 20);
+}
+
+// ════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  renderTicker();
+  renderPeptides();
+  renderNews();
+  renderPipeline();
+  renderCategories();
+  renderCompare();
+  renderGlossary();
+  renderFAQ();
+
+  // Animated counters
+  setTimeout(() => {
+    animateCounter(document.getElementById('statTotal'), peptides.length);
+    animateCounter(document.getElementById('statTrials'), 147);
+    animateCounter(document.getElementById('statNews'), newsData.length);
+    animateCounter(document.getElementById('statCategories'), categories.length);
+  }, 500);
+
+  // Search
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const activeChip = document.querySelector('.chip.active');
+    const filter = activeChip ? activeChip.dataset.filter : 'all';
+    renderPeptides(filter, e.target.value);
+  });
+
+  // Filter chips
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderPeptides(chip.dataset.filter, document.getElementById('searchInput').value);
+    });
+  });
+
+  // News tabs
+  document.querySelectorAll('#newsTabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#newsTabs .tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      renderNews(tab.dataset.tab);
+    });
+  });
+
+  // Nav scroll
+  window.addEventListener('scroll', () => {
+    document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
+  });
+
+  // Mobile menu
+  document.getElementById('mobileToggle').addEventListener('click', () => {
+    document.getElementById('navLinks').classList.toggle('open');
+  });
+
+  // Close modal
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalOverlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  // Active nav link
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', () => {
+      document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+      document.getElementById('navLinks').classList.remove('open');
+    });
+  });
+
+  // Intersection observer for fade-in
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+});
+</script>
+</body>
+</html>
