@@ -491,6 +491,36 @@ function recommendPeptides(concerns) {
     .sort((a, b) => b.relevanceScore - a.relevanceScore);
 }
 
+// ── Rate Limiter (sliding window per IP, in-memory per isolate) ──
+const RATE_LIMIT = 60;         // max requests
+const RATE_WINDOW = 60 * 1000; // per 60 seconds
+const ipHits = new Map();
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  let record = ipHits.get(ip);
+  if (!record) {
+    record = { timestamps: [] };
+    ipHits.set(ip, record);
+  }
+  // Evict old entries
+  record.timestamps = record.timestamps.filter((t) => now - t < RATE_WINDOW);
+  if (record.timestamps.length >= RATE_LIMIT) {
+    return { allowed: false, remaining: 0, reset: Math.ceil((record.timestamps[0] + RATE_WINDOW - now) / 1000) };
+  }
+  record.timestamps.push(now);
+
+  // Lazy cleanup: if map is getting large, prune stale IPs
+  if (ipHits.size > 1000) {
+    for (const [key, rec] of ipHits) {
+      rec.timestamps = rec.timestamps.filter((t) => now - t < RATE_WINDOW);
+      if (rec.timestamps.length === 0) ipHits.delete(key);
+    }
+  }
+
+  return { allowed: true, remaining: RATE_LIMIT - record.timestamps.length, reset: Math.ceil(RATE_WINDOW / 1000) };
+}
+
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   const corsHeaders = {
@@ -503,6 +533,25 @@ export async function onRequest(context) {
   // Handle CORS preflight
   if (context.request.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // ── Rate limit check ──
+  const clientIP = context.request.headers.get("CF-Connecting-IP") || context.request.headers.get("x-forwarded-for") || "unknown";
+  const rateCheck = checkRateLimit(clientIP);
+  corsHeaders["X-RateLimit-Limit"] = String(RATE_LIMIT);
+  corsHeaders["X-RateLimit-Remaining"] = String(rateCheck.remaining);
+  corsHeaders["X-RateLimit-Reset"] = String(rateCheck.reset);
+
+  if (!rateCheck.allowed) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Rate limit exceeded",
+        message: `Maximum ${RATE_LIMIT} requests per minute. Try again in ${rateCheck.reset}s.`,
+        retryAfter: rateCheck.reset,
+      }),
+      { status: 429, headers: { ...corsHeaders, "Retry-After": String(rateCheck.reset) } }
+    );
   }
 
   const action = url.searchParams.get("action");
@@ -558,6 +607,11 @@ export async function onRequest(context) {
     JSON.stringify({
       success: true,
       count: results.length,
+      rateLimit: {
+        limit: RATE_LIMIT,
+        window: "60 seconds",
+        remaining: rateCheck.remaining,
+      },
       endpoints: {
         all: "/api/peptides",
         recommend: "/api/peptides?action=recommend&skinQuality=8&jawline=6&eyes=7",
